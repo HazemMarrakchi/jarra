@@ -1,0 +1,20 @@
+# ── Node / Angular ──
+node_modules/
+dist/
+out-tsc/
+coverage/
+.angular/
+
+# ── logs & artefacts temporaires ──
+*.log
+*-out.txt
+*-err.txt
+*-done.txt
+
+# ── éditeurs ──
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

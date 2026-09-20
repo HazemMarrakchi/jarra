@@ -1,0 +1,217 @@
+/* ═══════════════════════════════════════════════════════════════════
+   JARRA — Design System
+   Thème : "terre cuite la nuit" — argile chaude sur fond sombre profond.
+   Terracotta (action) · Sable (surface) · Olive (impact écologique)
+   Typo : Fraunces (titres, éditorial) · Outfit (interface, lisible)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* ── palette ── */
+  --bg: #12100d;
+  --bg-raised: #1a1712;
+  --surface: #211c15;
+  --surface-2: #2a241b;
+  --border: #38311f;
+  --border-soft: rgba(247, 232, 211, 0.08);
+
+  --clay: #e8814f;          /* terracotta — action principale */
+  --clay-strong: #f0955f;
+  --clay-deep: #b4552d;
+  --clay-ghost: rgba(232, 129, 79, 0.12);
+
+  --sand: #f7e8d3;          /* texte principal */
+  --sand-dim: #d8c5a9;
+  --muted: #9c8f78;         /* texte secondaire */
+  --faint: #6b6252;         /* texte tertiaire */
+
+  --olive: #a8b97f;         /* impact écologique / succès */
+  --olive-deep: #5f7d4f;
+  --olive-ghost: rgba(168, 185, 127, 0.12);
+
+  --gold: #d4a24a;          /* highlights, ratings */
+  --danger: #e0604f;
+  --danger-ghost: rgba(224, 96, 79, 0.12);
+
+  /* ── typographie ── */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', Menlo, monospace;
+
+  /* ── rayons & ombres ── */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --shadow-1: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 10px 34px rgba(0, 0, 0, 0.45);
+  --shadow-clay: 0 6px 24px rgba(232, 129, 79, 0.28);
+
+  /* ── animations ── */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── reset léger ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  color: var(--sand);
+  background:
+    radial-gradient(1100px 640px at 82% -10%, rgba(232, 129, 79, 0.07), transparent 60%),
+    radial-gradient(800px 500px at -8% 12%, rgba(168, 185, 127, 0.05), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+a { color: var(--clay-strong); text-decoration: none; }
+button, input, select, textarea { font-family: var(--font-ui); }
+
+::selection { background: rgba(232, 129, 79, 0.35); color: var(--sand); }
+
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.4rem 4rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+/* ── boutons ─────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.72rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.2s var(--ease-out),
+    background 0.2s var(--ease-out), opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(160deg, var(--clay-strong), var(--clay-deep));
+  color: #1d0f06;
+  box-shadow: var(--shadow-clay);
+}
+.btn-primary:hover { box-shadow: 0 8px 30px rgba(232, 129, 79, 0.42); }
+.btn-ghost {
+  background: var(--border-soft);
+  color: var(--sand-dim);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: rgba(247, 232, 211, 0.12); color: var(--sand); }
+.btn[disabled] { opacity: 0.45; cursor: default; box-shadow: none; }
+
+/* ── cartes, chips, formulaires ──────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--sand-dim);
+  background: var(--border-soft);
+}
+
+.field label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--r-sm);
+  font-size: 1rem;
+  color: var(--sand);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--clay);
+  box-shadow: 0 0 0 3px var(--clay-ghost);
+}
+
+/* ── scrollbars ──────────────────────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: #4a4132 transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #4a4132;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* ── accessibilité & animations ──────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--clay-strong);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.55; }
+}
+.rise { animation: rise 0.5s var(--ease-out) both; }
+
+/* ── mobile ──────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .shell { padding: 0 1rem 5.5rem; } /* espace pour la tab bar mobile */
+  .field input, .field select, .field textarea { font-size: 16px; } /* pas d'auto-zoom iOS */
+  .btn { min-height: 46px; } /* cible tactile */
+}

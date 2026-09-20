@@ -1,0 +1,19 @@
+{
+  "name": "Jarra",
+  "short_name": "Jarra",
+  "description": "Sauvez un repas, sauvez la planète — les invendus des commerçants tunisiens à prix cassés.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#12100d",
+  "theme_color": "#12100d",
+  "lang": "fr",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
