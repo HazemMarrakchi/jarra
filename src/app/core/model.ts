@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════
 // JARRA — Modèle de domaine
 // Types partagés par le moteur simulé (démo) et le provider Supabase
 // (production). Le front ne connaît que ces types.
@@ -11,10 +11,10 @@ export interface Merchant {
   id: string;
   name: string;
   kind: MerchantKind;
-  /** Position sur la carte vectorielle, en % (0-100) du viewBox. */
-  x: number;
-  y: number;
-  area: string; // quartier de Tunis
+  /** Coordonnées réelles du commerce (WGS84). */
+  lat: number;
+  lon: number;
+  area: string; // quartier de Gabès
   verified: boolean;
   rating: number; // 0-5
   ratingCount: number;

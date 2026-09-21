@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+﻿import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CityStore } from '../core/city.store';
 import { KIND_ICON, formatClock, formatTnd } from '../core/model';
@@ -172,7 +172,7 @@ import { predictWaste, demoHistoryFor, PredictionInput } from '../core/predictor
     .v-badge {
       margin-left: auto; font-size: 0.7rem; font-weight: 700;
       color: var(--olive); background: var(--olive-ghost);
-      border: 1px solid rgba(168, 185, 127, 0.35);
+      border: 1px solid rgba(76, 122, 56, 0.35);
       padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap;
     }
 

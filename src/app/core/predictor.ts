@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════
 // JARRA — Prédiction des invendus
 // Modèle simple, explicable et honnête : moyenne pondérée des derniers
 // services + saisonnalité hebdomadaire + intervalle de confiance.

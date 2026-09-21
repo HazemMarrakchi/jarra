@@ -1,12 +1,13 @@
-import { Component, inject } from '@angular/core';
+﻿import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CityStore } from '../core/city.store';
+import { FoodArtComponent } from '../core/food-art.component';
 import { formatTnd } from '../core/model';
 
 @Component({
   selector: 'jr-landing',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FoodArtComponent],
   template: `
     <div class="shell">
       <!-- ── hero ─────────────────────────────────────────────── -->
@@ -39,35 +40,46 @@ import { formatTnd } from '../core/model';
           </div>
         </div>
 
-        <!-- Visuel : la jarra qui se remplit -->
+        <!-- Visuel produit : téléphone avec panier live -->
         <div class="hero-visual rise" aria-hidden="true">
-          <div class="jarra-scene">
-            <div class="glow"></div>
-            <svg viewBox="0 0 200 260" class="jarra-svg">
-              <defs>
-                <linearGradient id="clayBody" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#f0955f" />
-                  <stop offset="1" stop-color="#8f3f20" />
-                </linearGradient>
-                <clipPath id="jarClip">
-                  <path d="M100 30c-14 0-24 7-24 16 0 5.5 3.2 9.6 8 12.8-14.4 6.4-24 21.6-24 39.2 0 28 18 54 32 70 4 3.6 12 3.6 16 0 14-16 32-42 32-70 0-17.6-9.6-32.8-24-39.2 4.8-3.2 8-7.3 8-12.8 0-9-10-16-24-16z" />
-                </clipPath>
-              </defs>
-              <path d="M100 30c-14 0-24 7-24 16 0 5.5 3.2 9.6 8 12.8-14.4 6.4-24 21.6-24 39.2 0 28 18 54 32 70 4 3.6 12 3.6 16 0 14-16 32-42 32-70 0-17.6-9.6-32.8-24-39.2 4.8-3.2 8-7.3 8-12.8 0-9-10-16-24-16z"
-                fill="none" stroke="#e8814f" stroke-width="3" opacity="0.9" />
-              <path d="M66 62c-13-8-30-3-34 11-4 13 4 26 17 30M134 62c13-8 30-3 34 11 4 13-4 26-17 30"
-                fill="none" stroke="#e8814f" stroke-width="4" stroke-linecap="round" opacity="0.65" />
-              <g clip-path="url(#jarClip)">
-                <rect class="fill-wave" x="0" [attr.y]="fillY()" width="200" height="260" fill="url(#clayBody)" opacity="0.85" />
-              </g>
-              <g stroke="#f7e8d3" stroke-width="2.4" stroke-linecap="round" fill="none" opacity="0.95">
-                <path d="M100 96v44" />
-                <path d="M100 104l-12-9M100 104l12-9M100 118l-12-9M100 118l12-9M100 132l-12-9M100 132l12-9" />
-              </g>
-            </svg>
-            <div class="orbit-chip oc1">🥖 3 TND</div>
-            <div class="orbit-chip oc2">🍰 5.5 TND</div>
-            <div class="orbit-chip oc3">🍲 6 TND</div>
+          <div class="scene">
+            <div class="halo"></div>
+
+            <!-- téléphone -->
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="p-head">
+                  <span class="p-brand"><span class="p-mark"></span>Jarra</span>
+                  <span class="p-city">Gabès</span>
+                </div>
+                <div class="p-map">
+                  <span class="p-road r1"></span>
+                  <span class="p-road r2"></span>
+                  <span class="p-dot d1"></span>
+                  <span class="p-dot d2"></span>
+                  <span class="p-dot d3"></span>
+                  <span class="p-me">📍 vous</span>
+                </div>
+                <div class="p-card">
+                  <jr-food-art kind="bakery" class="p-art" />
+                  <div class="p-card-body">
+                    <strong>Panier du fournil</strong>
+                    <span>Médina · −65%</span>
+                    <div class="p-price">
+                      <b>3.000</b><i>TND</i>
+                      <s>8.500</s>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-cta">Réserver ce panier</div>
+              </div>
+            </div>
+
+            <!-- cartes flottantes -->
+            <div class="float-chip fc1">🥖 Panier surprise · 3 TND</div>
+            <div class="float-chip fc2">🌍 2.5 kg CO₂ évités</div>
+            <div class="float-chip fc3">🔔 Nouveau panier à 400 m</div>
           </div>
         </div>
       </section>
@@ -120,7 +132,7 @@ import { formatTnd } from '../core/model';
       display: inline-block; font-size: 0.74rem; font-weight: 600;
       letter-spacing: 0.12em; text-transform: uppercase;
       color: var(--olive); background: var(--olive-ghost);
-      border: 1px solid rgba(168, 185, 127, 0.3);
+      border: 1px solid rgba(76, 122, 56, 0.3);
       padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1.4rem;
     }
     .hero h1 { font-size: clamp(2.4rem, 5.2vw, 4rem); line-height: 1.04; font-weight: 700; }
@@ -144,27 +156,126 @@ import { formatTnd } from '../core/model';
     }
     .stat span { font-size: 0.76rem; color: var(--faint); letter-spacing: 0.02em; }
 
-    /* ── visuel jarra ── */
+    /* ── visuel produit : téléphone + flottantes ── */
     .hero-visual { display: flex; justify-content: center; }
-    .jarra-scene { position: relative; width: min(340px, 78vw); }
-    .glow {
-      position: absolute; inset: 8%; border-radius: 50%;
-      background: radial-gradient(circle, rgba(232, 129, 79, 0.22), transparent 65%);
-      filter: blur(10px); animation: breathe 5s ease-in-out infinite;
+    .scene { position: relative; width: min(300px, 72vw); }
+    .halo {
+      position: absolute; inset: -12% -18%;
+      background:
+        radial-gradient(closest-side, rgba(232, 129, 79, .25), transparent 70%),
+        radial-gradient(closest-side at 70% 70%, rgba(229, 180, 92, .12), transparent 70%);
+      filter: blur(18px);
+      animation: breathe 6s ease-in-out infinite;
     }
-    @keyframes breathe { 50% { transform: scale(1.08); opacity: 0.75; } }
-    .jarra-svg { position: relative; width: 100%; display: block; }
-    .fill-wave { transition: y 1.2s var(--ease-out); }
-    .orbit-chip {
-      position: absolute; font-size: 0.78rem; font-weight: 600;
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 0.4rem 0.8rem; border-radius: 999px; box-shadow: var(--shadow-2);
-      animation: float 6s ease-in-out infinite;
+    @keyframes breathe { 50% { transform: scale(1.06); opacity: .8; } }
+
+    .phone {
+      position: relative;
+      border-radius: 38px;
+      padding: 10px;
+      background: linear-gradient(160deg, #3a3227, #191510 60%);
+      border: 1px solid rgba(247, 236, 220, .22);
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, .55),
+        inset 0 1px 0 rgba(255, 217, 168, .18);
     }
-    .oc1 { top: 16%; left: -6%; animation-delay: 0s; }
-    .oc2 { top: 42%; right: -9%; animation-delay: 1.6s; }
-    .oc3 { bottom: 14%; left: -2%; animation-delay: 3.1s; }
-    @keyframes float { 50% { transform: translateY(-10px); } }
+    .phone-notch {
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      width: 34%; height: 14px; border-radius: 999px;
+      background: #100e0b; border: 1px solid rgba(247, 236, 220, .12);
+      z-index: 2;
+    }
+    .phone-screen {
+      border-radius: 30px;
+      background:
+        radial-gradient(320px 220px at 80% -10%, rgba(217, 111, 54, .1), transparent 60%),
+        #f6f0e4;
+      padding: 2.2rem .9rem 1rem;
+      display: grid; gap: .7rem;
+      overflow: hidden;
+      color: var(--sand);
+    }
+
+    .p-head { display: flex; align-items: center; justify-content: space-between; padding: 0 .2rem; }
+    .p-brand { display: flex; align-items: center; gap: .4rem; font-family: var(--font-display); font-weight: 700; font-size: .95rem; }
+    .p-mark {
+      width: 16px; height: 16px; border-radius: 6px;
+      background: var(--grad-clay);
+      box-shadow: 0 2px 8px rgba(232, 129, 79, .5);
+    }
+    .p-city { font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--olive); }
+
+    .p-map {
+      position: relative; height: 108px; border-radius: 14px; overflow: hidden;
+      background:
+        radial-gradient(140px 90px at 70% 20%, rgba(217, 111, 54, .1), transparent 70%),
+        linear-gradient(160deg, #efe7d6, #e7dcc6);
+      border: 1px solid var(--border);
+    }
+    .p-road { position: absolute; background: rgba(90, 70, 45, .12); border-radius: 4px; }
+    .p-road.r1 { left: -6%; right: 30%; top: 46%; height: 8px; transform: rotate(-7deg); }
+    .p-road.r2 { top: -10%; bottom: -10%; left: 58%; width: 8px; transform: rotate(9deg); }
+    .p-dot {
+      position: absolute; width: 10px; height: 10px; border-radius: 50%;
+      background: var(--clay-bright); box-shadow: 0 0 0 3px rgba(232, 129, 79, .25);
+      animation: pulse-dot 2.2s ease-in-out infinite;
+    }
+    .p-dot.d1 { top: 26%; left: 22%; }
+    .p-dot.d2 { top: 58%; left: 66%; animation-delay: .5s; }
+    .p-dot.d3 { top: 70%; left: 34%; animation-delay: 1s; }
+    .p-me {
+      position: absolute; top: 8px; right: 8px;
+      font-size: .58rem; font-weight: 700; color: var(--sand-dim);
+      background: rgba(255, 255, 255, .9); border: 1px solid var(--border);
+      padding: .18rem .45rem; border-radius: 999px;
+    }
+
+    .p-card {
+      display: grid; grid-template-columns: 74px 1fr; gap: .7rem;
+      padding: .6rem; border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-1);
+      align-items: center;
+    }
+    .p-art { border-radius: 12px; overflow: hidden; }
+    .p-card-body { display: grid; gap: 2px; }
+    .p-card-body strong { font-size: .8rem; font-weight: 600; }
+    .p-card-body > span { font-size: .66rem; color: var(--muted); }
+    .p-price { display: flex; align-items: baseline; gap: .3rem; margin-top: 2px; }
+    .p-price b { font-family: var(--font-display); font-size: 1.02rem; color: var(--clay-strong); }
+    .p-price i { font-style: normal; font-size: .58rem; color: var(--muted); }
+    .p-price s { font-size: .62rem; color: var(--faint); margin-left: .2rem; }
+
+    .p-cta {
+      text-align: center; padding: .62rem; border-radius: 999px;
+      background: var(--grad-clay); color: #22100a;
+      font-size: .76rem; font-weight: 700;
+      box-shadow: 0 6px 18px rgba(232, 129, 79, .35);
+    }
+
+    .float-chip {
+      position: absolute;
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .72rem; font-weight: 600; white-space: nowrap; color: var(--sand);
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-strong);
+      padding: .5rem .8rem; border-radius: 999px;
+      box-shadow: var(--shadow-2);
+      animation: floaty 6s ease-in-out infinite;
+    }
+    .fc1 { top: 8%; left: -22%; --tilt: -3deg; }
+    .fc2 { top: 44%; right: -26%; --tilt: 2deg; animation-delay: 1.8s; }
+    .fc3 { bottom: 6%; left: -14%; --tilt: -2deg; animation-delay: 3.2s; }
+
+    @media (max-width: 860px) {
+      .scene { width: min(250px, 64vw); }
+      .fc1 { left: -6%; }
+      .fc2 { right: -8%; }
+      .fc3 { left: -4%; }
+      .float-chip { font-size: .64rem; }
+    }
 
     /* ── sections "comment ça marche" & impact ── */
     .how { padding: 3rem 0; }
@@ -187,9 +298,9 @@ import { formatTnd } from '../core/model';
     .impact-band {
       margin: 2rem 0 3rem; padding: 2.6rem 1.6rem; border-radius: var(--r-xl);
       background:
-        radial-gradient(600px 300px at 50% 0%, rgba(168, 185, 127, 0.09), transparent 70%),
+        radial-gradient(600px 300px at 50% 0%, rgba(76, 122, 56, 0.09), transparent 70%),
         var(--surface);
-      border: 1px solid rgba(168, 185, 127, 0.22);
+      border: 1px solid rgba(76, 122, 56, 0.22);
       text-align: center;
     }
     .impact-band .btn { margin-top: 1.6rem; }

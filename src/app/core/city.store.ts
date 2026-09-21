@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════
 // JARRA — Store de données réactif
 // Expose la ville simulée via des signals Angular. Demain, un
 // SupabaseProvider implémentera les mêmes méthodes sans toucher au UI.

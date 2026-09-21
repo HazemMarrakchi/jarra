@@ -1,103 +1,42 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { KIND_ICON, Merchant, MerchantKind } from '../core/model';
+﻿// ═══════════════════════════════════════════════════════════════════
+// JARRA — Carte réelle (MapLibre GL + tuiles CartoDB Voyager, gratuites)
+// Vraie carte de Gabès : zoom/pinch tactile natif, marqueurs DOM custom.
+// Fallback élégant si WebGL est indisponible (tests, vieux navigateurs).
+// ═══════════════════════════════════════════════════════════════════
+
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges,
+  OnDestroy, Output, ViewChild,
+} from '@angular/core';
+import * as maplibregl from 'maplibre-gl';
+import { KIND_ICON, Merchant, MerchantKind } from './model';
 
 /** Marqueur affiché sur la carte : commerçant + son stock live. */
 export interface MapPin {
   merchant: Merchant;
-  liveCount: number; // paniers disponibles
-  units: number; // unités restantes au total
+  liveCount: number;
+  units: number;
 }
+
+/** Centre de Gabès. */
+const GABES_CENTER: [number, number] = [10.0982, 33.8815];
+/** Tuiles vectorielles gratuites et claires (pas de clé API). */
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
 @Component({
   selector: 'jr-city-map',
   standalone: true,
   template: `
     <div class="map-frame">
-      <svg
-        viewBox="0 0 100 72"
-        class="city-map"
-        role="img"
-        aria-label="Carte de Gabès avec les commerçants Jarra"
-        (click)="onBackgroundClick()"
-      >
-        <defs>
-          <radialGradient id="seaGlow" cx="80%" cy="20%" r="60%">
-            <stop offset="0" stop-color="#1d3040" />
-            <stop offset="1" stop-color="transparent" />
-          </radialGradient>
-          <filter id="pinGlow" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="0.9" result="b" />
-            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
+      <div #container class="map"></div>
 
-        <!-- fond : la mer (golfe de Gabès) -->
-        <rect width="100" height="72" rx="3" fill="#171410" />
-        <path d="M64 0 Q78 14 74 30 Q71 44 82 54 Q92 62 100 60 L100 0 Z" fill="url(#seaGlow)" opacity="0.9" />
-        <path d="M64 0 Q78 14 74 30 Q71 44 82 54 Q92 62 100 60" fill="none" stroke="#2c4256" stroke-width="0.35" opacity="0.8" />
+      @if (failed) {
+        <div class="map-fallback">
+          <strong>La carte interactive n'est pas disponible ici.</strong>
+          <span>Votre navigateur ou cet environnement ne supporte pas WebGL — la liste des paniers ci-dessous reste pleinement fonctionnelle.</span>
+        </div>
+      }
 
-        <!-- oasis de Gabès -->
-        <path d="M20 34 Q32 28 42 33 Q46 38 40 43 Q28 48 18 43 Q14 38 20 34 Z"
-          fill="#2c3a24" stroke="#4a5a35" stroke-width="0.25" opacity="0.9" />
-        <text x="29" y="40" class="water-label">Oasis de Gabès</text>
-
-        <!-- artères stylisées -->
-        <g stroke="#33291d" stroke-width="0.5" fill="none" opacity="0.9">
-          <path d="M48 44 Q52 34 46 26" />
-          <path d="M48 44 Q58 40 66 30 Q72 22 76 13" />
-          <path d="M48 44 Q40 46 34 48" />
-          <path d="M48 44 Q42 36 38 24" />
-          <path d="M48 44 Q56 30 62 19" />
-          <path d="M48 44 Q36 40 27 38" />
-        </g>
-
-        <!-- médina (texture) -->
-        <circle cx="55" cy="45" r="4.5" fill="none" stroke="#3d2f1e" stroke-width="0.3" stroke-dasharray="0.8 0.6" opacity="0.9" />
-
-        <!-- labels de quartiers -->
-        <g class="area-labels">
-          <text x="55" y="56">Médina</text>
-          <text x="38" y="18.5">Chott Salem</text>
-          <text x="62" y="14.5">Teboulbou</text>
-          <text x="76" y="8">Cheniki</text>
-          <text x="30" y="28">L'Oasis</text>
-          <text x="34" y="53">Oued Akhrich</text>
-          <text x="82" y="25.5">Ghannouch</text>
-          <text x="52" y="20.5">Menzel</text>
-        </g>
-        <!-- pins des commerçants -->
-        @for (pin of pins; track pin.merchant.id) {
-          <g
-            class="pin"
-            [class.dimmed]="dimmed(pin.merchant.kind)"
-            [class.selected]="selectedId === pin.merchant.id"
-            [attr.transform]="'translate(' + pin.merchant.x + ' ' + pin.merchant.y + ')'"
-            (click)="onPinClick(pin, $event)"
-            role="button"
-            [attr.aria-label]="pin.merchant.name + ' — ' + pin.liveCount + ' paniers'"
-            tabindex="0"
-            (keydown.enter)="onPinClick(pin, $event)"
-          >
-            @if (pin.liveCount > 0) {
-              <circle class="pin-ring" r="3.4" fill="none" [attr.stroke]="colorOf(pin.merchant.kind)" />
-            }
-            <circle
-              class="pin-dot"
-              [attr.r]="selectedId === pin.merchant.id ? 2.6 : 2"
-              [attr.fill]="pin.liveCount > 0 ? colorOf(pin.merchant.kind) : '#4a4132'"
-              filter="url(#pinGlow)"
-            />
-            @if (pin.liveCount > 0) {
-              <g class="pin-badge" transform="translate(2 -2.6)">
-                <circle r="1.55" fill="#12100d" [attr.stroke]="colorOf(pin.merchant.kind)" stroke-width="0.3" />
-                <text y="0.62" text-anchor="middle" class="pin-count">{{ pin.liveCount }}</text>
-              </g>
-            }
-          </g>
-        }
-      </svg>
-
-      <!-- légende -->
       <div class="map-legend">
         @for (k of kinds; track k) {
           <span><i class="dot" [style.background]="colorOf(k)"></i>{{ icon(k) }} {{ k }}</span>
@@ -107,58 +46,88 @@ export interface MapPin {
   `,
   styles: [`
     .map-frame { position: relative; }
-    .city-map {
-      width: 100%; height: auto; display: block;
-      border-radius: var(--r-lg); border: 1px solid var(--border-soft);
+    .map {
+      width: 100%; height: 460px;
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
       box-shadow: var(--shadow-2);
-      touch-action: manipulation;
     }
-    .water-label { font-size: 2.1px; fill: #57708c; font-style: italic; letter-spacing: 0.04em; }
-    .area-labels text {
-      font-size: 2px; fill: #6b6252; font-weight: 600;
-      letter-spacing: 0.05em; text-anchor: middle;
-      font-family: var(--font-ui); pointer-events: none;
-    }
-    .pin { cursor: pointer; transition: opacity 0.2s; outline: none; }
-    .pin.dimmed { opacity: 0.22; }
-    .pin:focus-visible .pin-dot { stroke: var(--sand); stroke-width: 0.4; }
-    .pin-dot { transition: r 0.2s var(--ease-spring); }
-    .pin-ring {
-      stroke-width: 0.28; opacity: 0.75;
-      animation: mapPulse 2.6s ease-out infinite; transform-origin: center;
-      transform-box: fill-box;
-    }
-    @keyframes mapPulse {
-      0% { transform: scale(0.5); opacity: 0.9; }
-      70% { transform: scale(1.5); opacity: 0; }
-      100% { transform: scale(1.5); opacity: 0; }
-    }
-    .pin-count {
-      font-size: 2px; font-weight: 700; fill: var(--sand);
-      font-family: var(--font-ui); pointer-events: none;
+    .map-fallback {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem;
+      text-align: center; padding: 1.5rem;
+      background: var(--surface-2); border-radius: var(--r-lg);
+      color: var(--muted); font-size: .88rem;
     }
     .map-legend {
-      display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem;
-      margin-top: 0.7rem; padding: 0 0.3rem;
-      font-size: 0.74rem; color: var(--muted);
+      display: flex; flex-wrap: wrap; gap: .5rem 1.1rem;
+      margin-top: .7rem; padding: 0 .3rem;
+      font-size: .74rem; color: var(--muted);
     }
-    .map-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .map-legend span { display: inline-flex; align-items: center; gap: .35rem; }
     .map-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    @media (max-width: 720px) {
+      .map { height: 52vh; height: 52svh; min-height: 320px; }
+    }
+    @media (max-width: 720px) and (orientation: landscape) {
+      .map { height: 74vh; }
+    }
   `],
 })
-export class CityMapComponent {
-  @Input({ required: true }) pins: MapPin[] = [];
+export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
+  @Input() pins: MapPin[] = [];
   @Input() selectedId: string | null = null;
-  /** Filtre actif : seul ce type ressort, les autres s'estompent. */
   @Input() kindFilter: MerchantKind | 'all' = 'all';
   @Output() select = new EventEmitter<MapPin>();
   @Output() background = new EventEmitter<void>();
 
+  @ViewChild('container') container!: ElementRef<HTMLDivElement>;
+
+  failed = false;
+
+  private map?: maplibregl.Map;
+  private markers: maplibregl.Marker[] = [];
+
   readonly kinds: MerchantKind[] = ['bakery', 'patisserie', 'restaurant', 'grocery'];
+
+  ngAfterViewInit(): void {
+    try {
+      this.map = new maplibregl.Map({
+        container: this.container.nativeElement,
+        style: MAP_STYLE,
+        center: GABES_CENTER,
+        zoom: 12.4,
+        attributionControl: false,
+      });
+      this.map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+      this.map.addControl(
+        new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
+        'bottom-right',
+      );
+      // Clic sur le fond = désélection
+      this.map.on('click', () => this.background.emit());
+      // Erreur de chargement des tuiles (offline) → fallback
+      this.map.on('error', () => { /* silencieux : la liste reste utilisable */ });
+      this.renderMarkers();
+    } catch {
+      this.failed = true;
+    }
+  }
+
+  ngOnChanges(): void {
+    this.renderMarkers();
+  }
+
+  ngOnDestroy(): void {
+    for (const m of this.markers) m.remove();
+    this.map?.remove();
+  }
 
   colorOf(kind: MerchantKind): string {
     return (
-      { bakery: '#e8814f', patisserie: '#d4a24a', restaurant: '#a8b97f', grocery: '#7fb9a8' } as Record<MerchantKind, string>
+      { bakery: '#d96f36', patisserie: '#c98f2e', restaurant: '#5f8746', grocery: '#3f8f77' } as Record<MerchantKind, string>
     )[kind];
   }
 
@@ -170,12 +139,37 @@ export class CityMapComponent {
     return this.kindFilter !== 'all' && this.kindFilter !== kind;
   }
 
-  onPinClick(pin: MapPin, event: Event): void {
-    event.stopPropagation();
-    this.select.emit(pin);
+  /** (Re)construit les marqueurs DOM custom. */
+  private renderMarkers(): void {
+    if (!this.map) return;
+    for (const m of this.markers) m.remove();
+    this.markers = [];
+
+    for (const pin of this.pins) {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = this.pinClass(pin);
+      el.style.setProperty('--pin-color', this.colorOf(pin.merchant.kind));
+      el.setAttribute('aria-label', `${pin.merchant.name} — ${pin.liveCount} paniers`);
+      if (pin.liveCount > 0) {
+        el.innerHTML = `<span class="pin-n">${pin.liveCount}</span>`;
+      }
+      el.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.select.emit(pin);
+      });
+
+      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 2] })
+        .setLngLat([pin.merchant.lon, pin.merchant.lat])
+        .addTo(this.map);
+      this.markers.push(marker);
+    }
   }
 
-  onBackgroundClick(): void {
-    this.background.emit();
+  private pinClass(pin: MapPin): string {
+    let cls = pin.liveCount > 0 ? 'jarra-pin live' : 'jarra-pin idle';
+    if (this.selectedId === pin.merchant.id) cls += ' selected';
+    if (this.dimmed(pin.merchant.kind)) cls += ' dimmed';
+    return cls;
   }
 }

@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+﻿import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CityStore } from '../core/city.store';
+import { FoodArtComponent } from '../core/food-art.component';
 import {
   KIND_ICON, KIND_LABEL, Order, discountPct, formatClock, formatTnd,
 } from '../core/model';
@@ -9,7 +10,7 @@ import {
 @Component({
   selector: 'jr-basket',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, FoodArtComponent],
   template: `
     <div class="shell narrow">
       @if (basket(); as b) {
@@ -17,6 +18,7 @@ import {
 
         @if (!order()) {
           <article class="card sheet rise">
+            <jr-food-art [kind]="merchant()?.kind ?? 'bakery'" class="hero-art" />
             <header class="sheet-head">
               <span class="kind-ico">{{ iconOf() }}</span>
               <div>
@@ -105,6 +107,11 @@ import {
     .back:hover { color: var(--sand); }
 
     .sheet { padding: 1.6rem; }
+    .hero-art {
+      margin: -1.6rem -1.6rem 1.2rem;
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      overflow: hidden;
+    }
     .sheet-head { display: flex; gap: 0.9rem; align-items: flex-start; }
     .kind-ico { font-size: 2rem; line-height: 1.1; }
     .kind { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clay-strong); }
@@ -180,7 +187,7 @@ export class BasketComponent {
     return b && b.status === 'live' && b.quantityLeft > 0 ? b : null;
   });
 
-  private merchant() {
+  merchant() {
     const b = this.basket();
     return b ? this.store.merchant(b.merchantId) : undefined;
   }

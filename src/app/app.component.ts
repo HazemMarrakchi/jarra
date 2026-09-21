@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+﻿import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
@@ -37,16 +37,20 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       <!-- Tab bar : mobile -->
       <nav class="tabbar" aria-label="Navigation mobile">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          <span class="t-ico" aria-hidden="true">🏺</span><span>Accueil</span>
+          <svg class="t-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19Z"/></svg>
+          <span>Accueil</span>
         </a>
         <a routerLink="/explorer" routerLinkActive="active">
-          <span class="t-ico" aria-hidden="true">🗺️</span><span>Explorer</span>
+          <svg class="t-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a6 6 0 0 1 6 6c0 4.2-6 11-6 11S6 13.7 6 9.5a6 6 0 0 1 6-6Z"/><circle cx="12" cy="9.5" r="2.2"/></svg>
+          <span>Explorer</span>
         </a>
         <a routerLink="/impact" routerLinkActive="active">
-          <span class="t-ico" aria-hidden="true">🌍</span><span>Impact</span>
+          <svg class="t-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19C5 10.5 12 5 20 5c0 7.5-5.5 14-15 14Z"/><path d="M5 19c2.5-5.5 6-9.5 10.5-11.5"/></svg>
+          <span>Impact</span>
         </a>
         <a routerLink="/commercant" routerLinkActive="active">
-          <span class="t-ico" aria-hidden="true">🏪</span><span>Commerçant</span>
+          <svg class="t-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5 5.2 5h13.6L20 8.5M4 8.5v11A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-11M4 8.5h16M9.5 21v-5.5h5V21"/></svg>
+          <span>Commerçant</span>
         </a>
       </nav>
     </div>
@@ -79,7 +83,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       transition: all 0.18s var(--ease-out);
     }
     .nav a:hover { color: var(--sand); background: var(--border-soft); }
-    .nav a.active { color: #1d0f06; background: linear-gradient(160deg, var(--clay-strong), var(--clay-deep)); font-weight: 600; }
+    .nav a.active { color: #fff; background: var(--grad-clay); font-weight: 600; box-shadow: var(--shadow-clay); }
     .cta { font-size: 0.85rem; padding: 0.6rem 1.2rem; }
 
     .content { flex: 1; }
@@ -88,9 +92,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     .tabbar {
       display: none;
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-      background: rgba(26, 23, 18, 0.92);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border-top: 1px solid var(--border-soft);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 30px rgba(60, 40, 20, 0.08);
       padding: 0.35rem 0.4rem calc(0.35rem + env(safe-area-inset-bottom));
     }
     .tabbar a {
@@ -100,8 +105,12 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       letter-spacing: 0.02em; transition: color 0.18s;
       min-height: 48px; justify-content: center;
     }
-    .tabbar .t-ico { font-size: 1.15rem; }
-    .tabbar a.active { color: var(--clay-strong); }
+    .t-ico {
+      width: 21px; height: 21px;
+      fill: none; stroke: currentColor; stroke-width: 1.8;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .tabbar a.active { color: var(--clay); }
 
     @media (max-width: 720px) {
       .topbar { padding: 0.8rem 1rem; }

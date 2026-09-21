@@ -4,8 +4,8 @@
   "description": "Sauvez un repas, sauvez la planète — les invendus des commerçants tunisiens à prix cassés.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#12100d",
-  "theme_color": "#12100d",
+  "background_color": "#faf7f0",
+  "theme_color": "#d96f36",
   "lang": "fr",
   "dir": "ltr",
   "icons": [

@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════
 // JARRA — Moteur de simulation de la ville (démo in-browser)
 // Une journée tunisienne accélérée : les commerçants ouvrent, publient
 // leurs invendus en fin de service, les citoyens réservent, les créneaux
@@ -20,23 +20,23 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-// ── La ville : 14 commerçants réels-types sur 8 quartiers de Gabès ──
-// Positions en % du viewBox de la carte vectorielle (0-100).
+// ── La ville : 14 commerçants types avec de vraies coordonnées ─────
+// Répartis sur 8 quartiers réels de Gabès (WGS84).
 const CITY: Array<Omit<Merchant, 'verified' | 'rating' | 'ratingCount'>> = [
-  { id: 'm01', name: 'Fournil de la Médina', kind: 'bakery', x: 55, y: 46, area: 'Médina' },
-  { id: 'm02', name: 'Boulangerie Chott Salem', kind: 'bakery', x: 38, y: 22, area: 'Chott Salem' },
-  { id: 'm03', name: 'Le Pain de Teboulbou', kind: 'bakery', x: 62, y: 18, area: 'Teboulbou' },
-  { id: 'm04', name: 'Le Croissant de Gabès', kind: 'patisserie', x: 50, y: 38, area: 'Médina' },
-  { id: 'm05', name: 'Délices de l\'Oasis', kind: 'patisserie', x: 30, y: 32, area: 'Chott Salem' },
-  { id: 'm06', name: 'Sucré-Salé Menzel', kind: 'patisserie', x: 76, y: 12, area: 'Cheniki' },
-  { id: 'm07', name: 'Le Comptoir du Port', kind: 'restaurant', x: 57, y: 43, area: 'Médina' },
-  { id: 'm08', name: 'Chez Salah — Cheniki', kind: 'restaurant', x: 46, y: 28, area: 'Cheniki' },
-  { id: 'm09', name: 'La Table de Teboulbou', kind: 'restaurant', x: 82, y: 20, area: 'Ghannouch' },
-  { id: 'm10', name: 'Épicerie du Souk', kind: 'grocery', x: 44, y: 52, area: 'Chott Salem' },
-  { id: 'm11', name: 'Marché Bio de l\'Oasis', kind: 'grocery', x: 27, y: 38, area: 'Sidi Driss' },
-  { id: 'm12', name: 'Supérette El Menzel', kind: 'grocery', x: 52, y: 24, area: 'Menzel' },
-  { id: 'm13', name: 'Fournil Sidi Driss', kind: 'bakery', x: 48, y: 44, area: 'Sidi Driss' },
-  { id: 'm14', name: 'Couscous House Oued Akhrich', kind: 'restaurant', x: 34, y: 48, area: 'Oued Akhrich' },
+  { id: 'm01', name: 'Fournil de la Médina', kind: 'bakery', lat: 33.8815, lon: 10.0982, area: 'Médina' },
+  { id: 'm02', name: 'Boulangerie Chott Salem', kind: 'bakery', lat: 33.9080, lon: 10.1140, area: 'Chott Salem' },
+  { id: 'm03', name: 'Le Pain de Teboulbou', kind: 'bakery', lat: 33.9770, lon: 10.0570, area: 'Teboulbou' },
+  { id: 'm04', name: 'Le Croissant de Gabès', kind: 'patisserie', lat: 33.8830, lon: 10.1010, area: 'Médina' },
+  { id: 'm05', name: 'Délices de l\'Oasis', kind: 'patisserie', lat: 33.9040, lon: 10.1060, area: 'Chott Salem' },
+  { id: 'm06', name: 'Sucré-Salé Menzel', kind: 'patisserie', lat: 33.8900, lon: 10.0870, area: 'Menzel' },
+  { id: 'm07', name: 'Le Comptoir du Port', kind: 'restaurant', lat: 33.8760, lon: 10.1060, area: 'Médina' },
+  { id: 'm08', name: 'Chez Salah — Cheniki', kind: 'restaurant', lat: 33.8690, lon: 10.1130, area: 'Cheniki' },
+  { id: 'm09', name: 'La Table de Ghannouch', kind: 'restaurant', lat: 33.9270, lon: 10.0550, area: 'Ghannouch' },
+  { id: 'm10', name: 'Épicerie du Souk', kind: 'grocery', lat: 33.9110, lon: 10.1180, area: 'Chott Salem' },
+  { id: 'm11', name: 'Marché Bio de l\'Oasis', kind: 'grocery', lat: 33.8650, lon: 10.0820, area: 'Sidi Driss' },
+  { id: 'm12', name: 'Supérette El Menzel', kind: 'grocery', lat: 33.8930, lon: 10.0910, area: 'Menzel' },
+  { id: 'm13', name: 'Fournil Sidi Driss', kind: 'bakery', lat: 33.8670, lon: 10.0780, area: 'Sidi Driss' },
+  { id: 'm14', name: 'Couscous House Oued Akhrich', kind: 'restaurant', lat: 33.8730, lon: 10.1040, area: 'Oued Akhrich' },
 ];
 
 // Catalogue de paniers par type de commerce (prix en millimes TND).

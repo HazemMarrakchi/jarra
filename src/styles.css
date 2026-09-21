@@ -1,72 +1,83 @@
 /* ═══════════════════════════════════════════════════════════════════
-   JARRA — Design System
-   Thème : "terre cuite la nuit" — argile chaude sur fond sombre profond.
-   Terracotta (action) · Sable (surface) · Olive (impact écologique)
-   Typo : Fraunces (titres, éditorial) · Outfit (interface, lisible)
+   JARRA — Design System v3 « Papier & Argile »
+   Thème CLAIR éditorial premium : papier crème, cartes blanches,
+   terracotta saturée (marque), vert forêt (impact éco), or chaud.
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* ── palette ── */
-  --bg: #12100d;
-  --bg-raised: #1a1712;
-  --surface: #211c15;
-  --surface-2: #2a241b;
-  --border: #38311f;
-  --border-soft: rgba(247, 232, 211, 0.08);
+  /* ── surfaces ── */
+  --bg: #faf7f0;            /* papier */
+  --bg-raised: #f3ede0;     /* section légèrement teintée */
+  --surface: #ffffff;       /* carte */
+  --surface-solid: #ffffff;
+  --surface-2: #f7f1e6;
+  --border: #eadfcd;
+  --border-soft: rgba(60, 45, 25, 0.07);
+  --border-strong: #d9cbb0;
 
-  --clay: #e8814f;          /* terracotta — action principale */
-  --clay-strong: #f0955f;
+  /* ── texte ── */
+  --sand: #251a10;          /* texte principal (brun très profond) */
+  --sand-dim: #4d4232;
+  --muted: #7a6d58;
+  --faint: #a5977f;
+
+  /* ── marque : terracotta ── */
+  --clay: #d96f36;
+  --clay-bright: #c2541f;   /* liens/accents lisibles sur clair */
+  --clay-strong: #d96f36;
   --clay-deep: #b4552d;
-  --clay-ghost: rgba(232, 129, 79, 0.12);
+  --clay-ghost: rgba(217, 111, 54, 0.1);
 
-  --sand: #f7e8d3;          /* texte principal */
-  --sand-dim: #d8c5a9;
-  --muted: #9c8f78;         /* texte secondaire */
-  --faint: #6b6252;         /* texte tertiaire */
+  /* ── impact : vert forêt ── */
+  --olive: #4c7a38;
+  --olive-deep: #3a5f2b;
+  --olive-ghost: rgba(76, 122, 56, 0.1);
 
-  --olive: #a8b97f;         /* impact écologique / succès */
-  --olive-deep: #5f7d4f;
-  --olive-ghost: rgba(168, 185, 127, 0.12);
+  --gold: #b8862e;
+  --gold-ghost: rgba(184, 134, 46, 0.12);
+  --danger: #d6453c;
+  --danger-ghost: rgba(214, 69, 60, 0.1);
 
-  --gold: #d4a24a;          /* highlights, ratings */
-  --danger: #e0604f;
-  --danger-ghost: rgba(224, 96, 79, 0.12);
+  /* dégradés signature */
+  --grad-clay: linear-gradient(135deg, #f2935a 0%, #d96f36 55%, #c2541f 100%);
+  --grad-gold: linear-gradient(135deg, #f6cf8a 0%, #dfa843 100%);
+  --grad-olive: linear-gradient(135deg, #8fbf6f 0%, #4c7a38 100%);
 
   /* ── typographie ── */
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-ui: 'Outfit', system-ui, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', Menlo, monospace;
 
-  /* ── rayons & ombres ── */
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
-  --shadow-1: 0 2px 10px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 10px 34px rgba(0, 0, 0, 0.45);
-  --shadow-clay: 0 6px 24px rgba(232, 129, 79, 0.28);
+  /* ── rayons, ombres douces teintées de brun ── */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+  --shadow-1: 0 1px 2px rgba(60, 40, 20, 0.05), 0 10px 26px rgba(60, 40, 20, 0.07);
+  --shadow-2: 0 2px 6px rgba(60, 40, 20, 0.07), 0 24px 60px rgba(60, 40, 20, 0.13);
+  --shadow-clay: 0 4px 14px rgba(217, 111, 54, 0.28), 0 14px 40px rgba(217, 111, 54, 0.16);
 
-  /* ── animations ── */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+
+  /* grain fin (specks sombres très subtils sur papier) */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ── reset léger ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-
 html, body { height: 100%; }
 html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
   font-family: var(--font-ui);
-  font-weight: 400;
   color: var(--sand);
   background:
-    radial-gradient(1100px 640px at 82% -10%, rgba(232, 129, 79, 0.07), transparent 60%),
-    radial-gradient(800px 500px at -8% 12%, rgba(168, 185, 127, 0.05), transparent 55%),
+    radial-gradient(1100px 640px at 88% -10%, rgba(242, 147, 90, 0.12), transparent 55%),
+    radial-gradient(900px 560px at -8% 18%, rgba(143, 191, 111, 0.1), transparent 55%),
+    radial-gradient(700px 700px at 50% 120%, rgba(246, 207, 138, 0.14), transparent 60%),
     var(--bg);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
@@ -74,17 +85,31 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* grain très discret */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: var(--grain);
+  pointer-events: none;
+  z-index: 1;
+}
+
 h1, h2, h3 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   margin: 0;
+  color: var(--sand);
 }
 
-a { color: var(--clay-strong); text-decoration: none; }
-button, input, select, textarea { font-family: var(--font-ui); }
+.grad-text {
+  background: linear-gradient(115deg, #b4552d 0%, #e07b3e 55%, #e5a948 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
 
-::selection { background: rgba(232, 129, 79, 0.35); color: var(--sand); }
+a { color: var(--clay-bright); text-decoration: none; }
+button, input, select, textarea { font-family: var(--font-ui); }
+::selection { background: rgba(217, 111, 54, 0.25); }
 
 .shell {
   max-width: 1200px;
@@ -93,125 +118,187 @@ button, input, select, textarea { font-family: var(--font-ui); }
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 2;
 }
 /* ── boutons ─────────────────────────────────────────────────────── */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border: none;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.92rem;
-  padding: 0.72rem 1.5rem;
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border: none; border-radius: 999px;
+  font-weight: 600; font-size: .92rem;
+  padding: .78rem 1.6rem;
   cursor: pointer;
-  transition: transform 0.18s var(--ease-spring), box-shadow 0.2s var(--ease-out),
-    background 0.2s var(--ease-out), opacity 0.2s;
+  overflow: hidden;
+  transition: transform .18s var(--ease-spring), box-shadow .25s var(--ease-out), opacity .2s;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
-.btn:active { transform: scale(0.97); }
+.btn::after {
+  content: '';
+  position: absolute; top: 0; left: -80%;
+  width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg);
+  transition: left .5s var(--ease-out);
+}
+.btn:hover::after { left: 130%; }
+.btn:active { transform: scale(.97); }
+
 .btn-primary {
-  background: linear-gradient(160deg, var(--clay-strong), var(--clay-deep));
-  color: #1d0f06;
+  background: var(--grad-clay);
+  color: #fff;
   box-shadow: var(--shadow-clay);
 }
-.btn-primary:hover { box-shadow: 0 8px 30px rgba(232, 129, 79, 0.42); }
-.btn-ghost {
-  background: var(--border-soft);
-  color: var(--sand-dim);
-  border: 1px solid var(--border);
-}
-.btn-ghost:hover { background: rgba(247, 232, 211, 0.12); color: var(--sand); }
-.btn[disabled] { opacity: 0.45; cursor: default; box-shadow: none; }
+.btn-primary:hover { box-shadow: 0 6px 20px rgba(217, 111, 54, .4), 0 20px 50px rgba(217, 111, 54, .22); transform: translateY(-1px); }
 
-/* ── cartes, chips, formulaires ──────────────────────────────────── */
+.btn-ghost {
+  background: rgba(255, 255, 255, .7);
+  color: var(--sand-dim);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.btn-ghost:hover { background: #fff; color: var(--sand); border-color: var(--clay); }
+
+.btn[disabled] { opacity: .45; cursor: default; box-shadow: none; }
+.btn[disabled]::after { display: none; }
+
+/* ── cartes ──────────────────────────────────────────────────────── */
 .card {
+  position: relative;
   background: var(--surface);
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-1);
 }
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 0.28rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--sand-dim);
-  background: var(--border-soft);
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 12%; right: 12%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(217, 111, 54, 0.35), transparent);
+  pointer-events: none;
 }
 
+.chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .72rem; font-weight: 600; letter-spacing: .04em;
+  padding: .3rem .75rem; border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--sand-dim);
+  background: #fff;
+}
+
+/* ── formulaires ─────────────────────────────────────────────────── */
 .field label {
   display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 0.45rem;
+  font-size: .7rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: .45rem;
 }
 .field input, .field select, .field textarea {
   width: 100%;
-  padding: 0.75rem 0.9rem;
+  padding: .78rem 1rem;
   border-radius: var(--r-sm);
   font-size: 1rem;
   color: var(--sand);
-  background: var(--bg-raised);
+  background: #fff;
   border: 1px solid var(--border);
-  transition: border-color 0.18s, box-shadow 0.18s;
+  transition: border-color .18s, box-shadow .18s;
 }
 .field input:focus, .field select:focus, .field textarea:focus {
   outline: none;
   border-color: var(--clay);
-  box-shadow: 0 0 0 3px var(--clay-ghost);
+  box-shadow: 0 0 0 4px var(--clay-ghost);
 }
 
 /* ── scrollbars ──────────────────────────────────────────────────── */
-* { scrollbar-width: thin; scrollbar-color: #4a4132 transparent; }
+* { scrollbar-width: thin; scrollbar-color: #d8c9ad transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
 *::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb {
-  background: #4a4132;
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
+*::-webkit-scrollbar-thumb { background: #d8c9ad; border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
 
 /* ── accessibilité & animations ──────────────────────────────────── */
-:focus-visible {
-  outline: 2px solid var(--clay-strong);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; border-radius: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: .01ms !important;
   }
 }
 
 @keyframes rise {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes pulse-dot {
   0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.55; }
+  50% { transform: scale(1.5); opacity: .5; }
 }
-.rise { animation: rise 0.5s var(--ease-out) both; }
+@keyframes floaty {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-12px) rotate(var(--tilt, 0deg)); }
+}
+.rise { animation: rise .6s var(--ease-out) both; }
+
+/* ── marqueurs de la carte réelle (DOM créé par MapLibre) ─────────── */
+.jarra-pin {
+  width: 30px; height: 38px;
+  border: 2.5px solid #fff;
+  background: var(--pin-color, #d96f36);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  transform-origin: 50% 100%;
+  box-shadow: 0 4px 12px rgba(30, 20, 10, 0.3);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .25s var(--ease-spring), opacity .2s, box-shadow .2s;
+  padding: 0;
+}
+.jarra-pin .pin-n {
+  transform: rotate(45deg);
+  font-family: var(--font-ui);
+  font-weight: 700; font-size: 12px; color: #fff;
+  line-height: 1; pointer-events: none;
+}
+.jarra-pin.idle { background: #c9bda4; }
+.jarra-pin.dimmed { opacity: .25; }
+.jarra-pin.live::after {
+  content: '';
+  position: absolute; inset: -7px;
+  border: 2px solid var(--pin-color, #d96f36);
+  border-radius: 50%;
+  animation: pinPulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+.jarra-pin:hover { transform: rotate(-45deg) scale(1.18); }
+.jarra-pin.selected {
+  transform: rotate(-45deg) scale(1.35);
+  box-shadow: 0 8px 24px rgba(30, 20, 10, 0.45);
+  z-index: 10;
+}
+@keyframes pinPulse {
+  0% { transform: scale(.55); opacity: .85; }
+  70% { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+/* contrôles MapLibre à l'identité Jarra */
+.maplibregl-ctrl-group {
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(30, 20, 10, .18) !important;
+}
+.maplibregl-ctrl-attrib {
+  font-family: var(--font-ui) !important;
+  font-size: 10px !important;
+  border-radius: 10px !important;
+}
 
 /* ── mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
-  .shell { padding: 0 1rem 5.5rem; } /* espace pour la tab bar mobile */
-  .field input, .field select, .field textarea { font-size: 16px; } /* pas d'auto-zoom iOS */
-  .btn { min-height: 46px; } /* cible tactile */
+  .shell { padding: 0 1rem 5.5rem; }
+  .field input, .field select, .field textarea { font-size: 16px; }
+  .btn { min-height: 46px; }
 }

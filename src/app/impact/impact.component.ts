@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+﻿import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CityStore } from '../core/city.store';
 import { formatClock, formatTnd } from '../core/model';
@@ -98,7 +98,7 @@ import { formatClock, formatTnd } from '../core/model';
       display: inline-block; font-size: 0.72rem; font-weight: 600;
       letter-spacing: 0.12em; text-transform: uppercase;
       color: var(--olive); background: var(--olive-ghost);
-      border: 1px solid rgba(168, 185, 127, 0.3);
+      border: 1px solid rgba(76, 122, 56, 0.3);
       padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
     }
     .head h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); }

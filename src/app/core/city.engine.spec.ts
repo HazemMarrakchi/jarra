@@ -1,4 +1,4 @@
-import { CityEngine, mulberry32 } from './city.engine';
+﻿import { CityEngine, mulberry32 } from './city.engine';
 import { discountPct, formatClock, formatTnd } from './model';
 import { predictWaste } from './predictor';
 

@@ -1,7 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+﻿import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CityMapComponent, MapPin } from '../core/city-map.component';
 import { CityStore } from '../core/city.store';
+import { FoodArtComponent } from '../core/food-art.component';
 import {
   Basket, KIND_ICON, KIND_LABEL, Merchant, MerchantKind,
   discountPct, formatClock, formatTnd,
@@ -10,7 +11,7 @@ import {
 @Component({
   selector: 'jr-explore',
   standalone: true,
-  imports: [CityMapComponent, RouterLink],
+  imports: [CityMapComponent, RouterLink, FoodArtComponent],
   template: `
     <div class="shell">
       <header class="page-head rise">
@@ -59,26 +60,28 @@ import {
           }
           @for (b of filtered(); track b.id) {
             <article class="basket card rise" [class.selected]="b.merchantId === selectedId()">
-              <div class="b-top">
-                <span class="b-ico">{{ iconOf(merchantOf(b).kind) }}</span>
-                <div class="b-id">
-                  <h3>{{ b.title }}</h3>
-                  <span class="b-merchant">{{ merchantOf(b).name }} · {{ merchantOf(b).area }}</span>
+              <jr-food-art [kind]="merchantOf(b).kind" class="b-art" />
+              <div class="b-body">
+                <div class="b-top">
+                  <div class="b-id">
+                    <h3>{{ b.title }}</h3>
+                    <span class="b-merchant">{{ merchantOf(b).name }} · {{ merchantOf(b).area }}</span>
+                  </div>
+                  <span class="discount">−{{ discountOf(b) }}%</span>
                 </div>
-                <span class="discount">−{{ discountOf(b) }}%</span>
+                <p class="b-desc">{{ b.description }}</p>
+                <div class="b-meta">
+                  <span class="price">
+                    <strong>{{ price(b.rescuePrice) }}</strong>
+                    <s>{{ price(b.originalPrice) }}</s>
+                  </span>
+                  <span class="pickup">🕐 {{ window(b) }}</span>
+                  <span class="qty" [class.low]="b.quantityLeft <= 2">
+                    {{ b.quantityLeft }}/{{ b.quantityTotal }} restants
+                  </span>
+                </div>
+                <a class="btn btn-primary b-cta" [routerLink]="['/basket', b.id]">Réserver ce panier</a>
               </div>
-              <p class="b-desc">{{ b.description }}</p>
-              <div class="b-meta">
-                <span class="price">
-                  <strong>{{ price(b.rescuePrice) }}</strong>
-                  <s>{{ price(b.originalPrice) }}</s>
-                </span>
-                <span class="pickup">🕐 {{ window(b) }}</span>
-                <span class="qty" [class.low]="b.quantityLeft <= 2">
-                  {{ b.quantityLeft }}/{{ b.quantityTotal }} restants
-                </span>
-              </div>
-              <a class="btn btn-primary b-cta" [routerLink]="['/basket', b.id]">Réserver ce panier</a>
             </article>
           }
         </div>
@@ -96,7 +99,7 @@ import {
     .live-chip {
       display: inline-flex; align-items: center; gap: 0.45rem;
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em;
-      color: var(--olive); border: 1px solid rgba(168, 185, 127, 0.35);
+      color: var(--olive); border: 1px solid rgba(76, 122, 56, 0.35);
       background: var(--olive-ghost); padding: 0.4rem 0.85rem; border-radius: 999px;
     }
     .live-chip i {
@@ -127,18 +130,22 @@ import {
 
     .list-col { display: flex; flex-direction: column; gap: 0.9rem; }
 
-    .basket { padding: 1.1rem 1.2rem; transition: border-color 0.2s, transform 0.2s var(--ease-out); }
-    .basket:hover { transform: translateY(-2px); }
-    .basket.selected { border-color: rgba(232, 129, 79, 0.5); box-shadow: var(--shadow-clay); }
-    .b-top { display: flex; align-items: flex-start; gap: 0.75rem; }
-    .b-ico { font-size: 1.5rem; line-height: 1; }
+    .basket {
+      padding: 1rem; display: grid; grid-template-columns: 96px 1fr; gap: 1rem;
+      transition: border-color .2s, transform .2s var(--ease-out), box-shadow .2s;
+    }
+    .basket:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); }
+    .basket.selected { border-color: rgba(232, 129, 79, .55); box-shadow: var(--shadow-clay); }
+    .b-art { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border); }
+    .b-body { min-width: 0; display: flex; flex-direction: column; }
+    .b-top { display: flex; align-items: flex-start; gap: .75rem; }
     .b-id { flex: 1; min-width: 0; }
     .b-id h3 { font-size: 1.02rem; font-weight: 600; }
-    .b-merchant { font-size: 0.78rem; color: var(--muted); }
+    .b-merchant { font-size: .78rem; color: var(--muted); }
     .discount {
       font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
       color: var(--olive); background: var(--olive-ghost);
-      border: 1px solid rgba(168, 185, 127, 0.3);
+      border: 1px solid rgba(76, 122, 56, 0.3);
       padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap;
     }
     .b-desc { color: var(--muted); font-size: 0.86rem; line-height: 1.55; margin: 0.6rem 0; font-weight: 300; }
@@ -162,6 +169,10 @@ import {
     }
     @media (max-width: 720px) {
       .page-head { padding: 1.3rem 0 0.9rem; }
+      .basket { grid-template-columns: 76px 1fr; gap: .75rem; padding: .8rem; }
+      .b-art { border-radius: 12px; }
+      .b-desc { font-size: .8rem; }
+      .b-cta { margin-top: .5rem; }
       .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
       .filters::-webkit-scrollbar { display: none; }
       .fchip { flex-shrink: 0; }
