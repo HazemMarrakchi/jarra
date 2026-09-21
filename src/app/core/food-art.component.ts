@@ -10,7 +10,7 @@ import { MerchantKind } from './model';
   selector: 'jr-food-art',
   standalone: true,
   template: `
-    <svg [attr.viewBox]="'0 0 120 120'" class="art" aria-hidden="true">
+    <svg [attr.viewBox]="'0 0 120 120'" preserveAspectRatio="xMidYMid slice" class="art" aria-hidden="true">
       <defs>
         <radialGradient [attr.id]="'bg' + uid" cx="50%" cy="42%" r="70%">
           <stop offset="0" stop-color="#fdf2df" />

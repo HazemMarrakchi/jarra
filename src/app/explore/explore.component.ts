@@ -60,24 +60,25 @@ import {
           }
           @for (b of filtered(); track b.id) {
             <article class="basket card rise" [class.selected]="b.merchantId === selectedId()">
-              <jr-food-art [kind]="merchantOf(b).kind" class="b-art" />
+              <a class="b-banner" [routerLink]="['/basket', b.id]" [attr.aria-label]="'Voir ' + b.title">
+                <jr-food-art [kind]="merchantOf(b).kind" />
+                <span class="discount">−{{ discountOf(b) }}%</span>
+                <span class="qty-pill" [class.low]="b.quantityLeft <= 2">
+                  {{ b.quantityLeft }} restant{{ b.quantityLeft > 1 ? 's' : '' }}
+                </span>
+              </a>
               <div class="b-body">
-                <div class="b-top">
-                  <div class="b-id">
-                    <h3>{{ b.title }}</h3>
-                    <span class="b-merchant">{{ merchantOf(b).name }} · {{ merchantOf(b).area }}</span>
-                  </div>
-                  <span class="discount">−{{ discountOf(b) }}%</span>
-                </div>
+                <h3>{{ b.title }}</h3>
+                <span class="b-merchant">{{ merchantOf(b).name }} · {{ merchantOf(b).area }}</span>
                 <p class="b-desc">{{ b.description }}</p>
-                <div class="b-meta">
-                  <span class="price">
-                    <strong>{{ price(b.rescuePrice) }}</strong>
+                <div class="b-foot">
+                  <div class="b-price">
+                    <strong>{{ price(b.rescuePrice) }}<i>TND</i></strong>
                     <s>{{ price(b.originalPrice) }}</s>
-                  </span>
-                  <span class="pickup">🕐 {{ window(b) }}</span>
-                  <span class="qty" [class.low]="b.quantityLeft <= 2">
-                    {{ b.quantityLeft }}/{{ b.quantityTotal }} restants
+                  </div>
+                  <span class="pickup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+                    {{ window(b) }}
                   </span>
                 </div>
                 <a class="btn btn-primary b-cta" [routerLink]="['/basket', b.id]">Réserver ce panier</a>
@@ -128,35 +129,62 @@ import {
     .explore-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 1.4rem; align-items: start; }
     .map-col { position: sticky; top: 1rem; }
 
-    .list-col { display: flex; flex-direction: column; gap: 0.9rem; }
+    .list-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; align-content: start; }
 
     .basket {
-      padding: 1rem; display: grid; grid-template-columns: 96px 1fr; gap: 1rem;
-      transition: border-color .2s, transform .2s var(--ease-out), box-shadow .2s;
+      overflow: hidden;
+      transition: border-color .2s, transform .25s var(--ease-out), box-shadow .25s;
     }
-    .basket:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); }
-    .basket.selected { border-color: rgba(232, 129, 79, .55); box-shadow: var(--shadow-clay); }
-    .b-art { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--border); }
-    .b-body { min-width: 0; display: flex; flex-direction: column; }
-    .b-top { display: flex; align-items: flex-start; gap: .75rem; }
-    .b-id { flex: 1; min-width: 0; }
-    .b-id h3 { font-size: 1.02rem; font-weight: 600; }
-    .b-merchant { font-size: .78rem; color: var(--muted); }
+    .basket:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); }
+    .basket.selected { border-color: var(--clay); box-shadow: var(--shadow-clay); }
+
+    .b-banner {
+      position: relative; display: block;
+      aspect-ratio: 16 / 9.5;
+      overflow: hidden;
+      border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
+    }
+    .b-banner jr-food-art { height: 100%; }
+    .b-banner jr-food-art svg { height: 100%; width: 100%; object-fit: cover; }
+
     .discount {
-      font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
-      color: var(--olive); background: var(--olive-ghost);
-      border: 1px solid rgba(76, 122, 56, 0.3);
-      padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap;
+      position: absolute; top: 10px; right: 10px;
+      font-family: var(--font-display); font-weight: 700; font-size: 0.82rem;
+      color: #fff; background: var(--grad-clay);
+      padding: 0.28rem 0.62rem; border-radius: 999px;
+      box-shadow: 0 3px 10px rgba(217, 111, 54, .4);
     }
-    .b-desc { color: var(--muted); font-size: 0.86rem; line-height: 1.55; margin: 0.6rem 0; font-weight: 300; }
-    .b-meta {
-      display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: center;
-      font-size: 0.8rem; color: var(--sand-dim); margin-bottom: 0.85rem;
+    .qty-pill {
+      position: absolute; bottom: 10px; left: 10px;
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--sand); background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(6px);
+      padding: 0.24rem 0.6rem; border-radius: 999px;
+      border: 1px solid var(--border);
     }
-    .price strong { font-size: 1.05rem; color: var(--clay-strong); font-weight: 700; }
-    .price strong::after { content: ' TND'; font-size: 0.66rem; font-weight: 600; }
-    .price s { color: var(--faint); margin-left: 0.45rem; font-size: 0.78rem; }
-    .qty.low { color: var(--danger); font-weight: 600; }
+    .qty-pill.low { color: var(--danger); border-color: rgba(214, 69, 60, .35); }
+
+    .b-body { padding: 0.95rem 1rem 1.05rem; display: flex; flex-direction: column; }
+    .b-body h3 { font-size: 1.02rem; font-weight: 600; }
+    .b-merchant { font-size: 0.78rem; color: var(--muted); display: block; margin-top: 2px; }
+    .b-desc {
+      color: var(--muted); font-size: 0.82rem; line-height: 1.55; font-weight: 300;
+      margin: 0.55rem 0 0.8rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .b-foot {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+      margin-bottom: 0.85rem; margin-top: auto;
+    }
+    .b-price { display: flex; align-items: baseline; gap: 0.35rem; }
+    .b-price strong { font-family: var(--font-display); font-size: 1.15rem; color: var(--clay); font-weight: 700; }
+    .b-price strong i { font-style: normal; font-size: 0.62rem; color: var(--muted); margin-left: 2px; }
+    .b-price s { font-size: 0.74rem; color: var(--faint); }
+    .pickup {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.74rem; color: var(--sand-dim); font-weight: 500; white-space: nowrap;
+    }
+    .pickup svg { width: 14px; height: 14px; fill: none; stroke: var(--clay); stroke-width: 1.8; stroke-linecap: round; }
     .b-cta { width: 100%; }
 
     .empty { padding: 2.4rem 1.6rem; text-align: center; }
@@ -169,10 +197,8 @@ import {
     }
     @media (max-width: 720px) {
       .page-head { padding: 1.3rem 0 0.9rem; }
-      .basket { grid-template-columns: 76px 1fr; gap: .75rem; padding: .8rem; }
-      .b-art { border-radius: 12px; }
+      .list-col { grid-template-columns: 1fr; }
       .b-desc { font-size: .8rem; }
-      .b-cta { margin-top: .5rem; }
       .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
       .filters::-webkit-scrollbar { display: none; }
       .fchip { flex-shrink: 0; }

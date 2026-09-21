@@ -53,16 +53,55 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <span>Commerçant</span>
         </a>
       </nav>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="f-grid">
+          <div class="f-brand">
+            <div class="f-brand-top">
+              <span class="f-mark" aria-hidden="true"></span>
+              <strong>Jarra</strong>
+            </div>
+            <p>Sauvez un repas, sauvez la planète. Une jarra à la fois.</p>
+            <span class="f-city">Gabès · Tunisie</span>
+          </div>
+          <div class="f-col">
+            <h4>Explorer</h4>
+            <a routerLink="/explorer">La carte live</a>
+            <a routerLink="/impact">Impact collectif</a>
+          </div>
+          <div class="f-col">
+            <h4>La plateforme</h4>
+            <a routerLink="/commercant">Espace commerçant</a>
+            <a href="https://github.com/HazemMarrakchi/jarra" target="_blank" rel="noopener">Code source</a>
+          </div>
+          <div class="f-col">
+            <h4>Contact</h4>
+            <a href="https://github.com/HazemMarrakchi" target="_blank" rel="noopener">Hazem Marrakchi</a>
+            <span class="f-muted">hello&#64;jarra.tn</span>
+          </div>
+        </div>
+        <div class="f-bottom">
+          <span>© 2026 Jarra — conçu et développé à Gabès</span>
+          <span>Démonstration : commerçants et données simulés</span>
+        </div>
+      </footer>
     </div>
   `,
   styles: [`
     .frame { min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* ── topbar (desktop) ─────────────────────────────────────── */
+    /* ── topbar flottante (desktop) ──────────────────────────── */
     .topbar {
+      position: sticky; top: 12px; z-index: 40;
       display: flex; align-items: center; gap: 1.2rem;
-      padding: 0.9rem 1.4rem; max-width: 1200px; width: 100%;
-      margin: 0 auto;
+      padding: 0.55rem 1.1rem; max-width: 1200px; width: calc(100% - 2rem);
+      margin: 12px auto 0;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      box-shadow: 0 8px 30px rgba(60, 40, 20, 0.08);
     }
     .brand { display: flex; align-items: center; gap: 0.65rem; color: var(--sand); }
     .mark {
@@ -111,6 +150,54 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       stroke-linecap: round; stroke-linejoin: round;
     }
     .tabbar a.active { color: var(--clay); }
+
+    /* ── footer ──────────────────────────────────────────────── */
+    .footer {
+      margin-top: 4rem;
+      padding: 3rem 1.4rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface-solid);
+    }
+    .f-grid {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 2rem;
+    }
+    .f-brand-top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; }
+    .f-mark {
+      width: 26px; height: 26px; border-radius: 9px;
+      background: var(--grad-clay);
+      box-shadow: 0 3px 10px rgba(217, 111, 54, .35);
+    }
+    .f-brand strong { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+    .f-brand p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; margin: 0 0 0.6rem; max-width: 22rem; font-weight: 300; }
+    .f-city {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--olive);
+    }
+    .f-col { display: flex; flex-direction: column; gap: 0.55rem; }
+    .f-col h4 {
+      margin: 0 0 0.3rem; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint);
+      font-family: var(--font-ui);
+    }
+    .f-col a, .f-muted { color: var(--sand-dim); font-size: 0.85rem; transition: color 0.15s; }
+    .f-col a:hover { color: var(--clay); }
+    .f-bottom {
+      max-width: 1200px; margin: 2.4rem auto 0; padding-top: 1.2rem;
+      border-top: 1px solid var(--border-soft);
+      display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      font-size: 0.74rem; color: var(--faint);
+    }
+
+    @media (max-width: 860px) {
+      .f-grid { grid-template-columns: 1fr 1fr; }
+      .f-brand { grid-column: 1 / -1; }
+    }
+    @media (max-width: 720px) {
+      .footer { padding: 2.2rem 1rem 6rem; margin-top: 2.5rem; }
+      .f-grid { gap: 1.4rem; }
+      .f-bottom { flex-direction: column; gap: 0.3rem; }
+    }
 
     @media (max-width: 720px) {
       .topbar { padding: 0.8rem 1rem; }
