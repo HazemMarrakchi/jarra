@@ -17,7 +17,7 @@ import {
         <div>
           <h1>La carte du sauvetage</h1>
           <p class="sub">
-            {{ liveCount() }} paniers disponibles à Tunis — il est
+            {{ liveCount() }} paniers disponibles à Gabès — il est
             <span class="clock">{{ clock() }}</span> en ville.
           </p>
         </div>

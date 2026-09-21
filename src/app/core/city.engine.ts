@@ -20,23 +20,23 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-// ── La ville : 14 commerçants réels-types sur 8 quartiers de Tunis ──
+// ── La ville : 14 commerçants réels-types sur 8 quartiers de Gabès ──
 // Positions en % du viewBox de la carte vectorielle (0-100).
 const CITY: Array<Omit<Merchant, 'verified' | 'rating' | 'ratingCount'>> = [
   { id: 'm01', name: 'Fournil de la Médina', kind: 'bakery', x: 55, y: 46, area: 'Médina' },
-  { id: 'm02', name: 'Boulangerie Ennasr', kind: 'bakery', x: 38, y: 22, area: 'Ennasr' },
-  { id: 'm03', name: 'Le Pain d\'Ariana', kind: 'bakery', x: 62, y: 18, area: 'Ariana' },
-  { id: 'm04', name: 'Pâtisserie La Gazelle', kind: 'patisserie', x: 50, y: 38, area: 'Centre-Ville' },
-  { id: 'm05', name: 'Délices du Lac', kind: 'patisserie', x: 30, y: 32, area: 'Lac 2' },
-  { id: 'm06', name: 'Sidi Bou Sucré', kind: 'patisserie', x: 76, y: 12, area: 'Sidi Bou Saïd' },
-  { id: 'm07', name: 'Dar El Jeld Express', kind: 'restaurant', x: 57, y: 43, area: 'Médina' },
-  { id: 'm08', name: 'Chez Slah — El Manar', kind: 'restaurant', x: 46, y: 28, area: 'El Manar' },
-  { id: 'm09', name: 'La Marsa Beach Food', kind: 'restaurant', x: 82, y: 20, area: 'La Marsa' },
-  { id: 'm10', name: 'Épicerie El Fell', kind: 'grocery', x: 44, y: 52, area: 'Bab El Khadra' },
-  { id: 'm11', name: 'Marché Bio du Lac', kind: 'grocery', x: 27, y: 38, area: 'Lac 1' },
-  { id: 'm12', name: 'Supérette Menzah 6', kind: 'grocery', x: 52, y: 24, area: 'El Menzah' },
-  { id: 'm13', name: 'Fournil du Belvédère', kind: 'bakery', x: 48, y: 44, area: 'Belvédère' },
-  { id: 'm14', name: 'Couscous House Bardo', kind: 'restaurant', x: 34, y: 48, area: 'Le Bardo' },
+  { id: 'm02', name: 'Boulangerie Chott Salem', kind: 'bakery', x: 38, y: 22, area: 'Chott Salem' },
+  { id: 'm03', name: 'Le Pain de Teboulbou', kind: 'bakery', x: 62, y: 18, area: 'Teboulbou' },
+  { id: 'm04', name: 'Le Croissant de Gabès', kind: 'patisserie', x: 50, y: 38, area: 'Médina' },
+  { id: 'm05', name: 'Délices de l\'Oasis', kind: 'patisserie', x: 30, y: 32, area: 'Chott Salem' },
+  { id: 'm06', name: 'Sucré-Salé Menzel', kind: 'patisserie', x: 76, y: 12, area: 'Cheniki' },
+  { id: 'm07', name: 'Le Comptoir du Port', kind: 'restaurant', x: 57, y: 43, area: 'Médina' },
+  { id: 'm08', name: 'Chez Salah — Cheniki', kind: 'restaurant', x: 46, y: 28, area: 'Cheniki' },
+  { id: 'm09', name: 'La Table de Teboulbou', kind: 'restaurant', x: 82, y: 20, area: 'Ghannouch' },
+  { id: 'm10', name: 'Épicerie du Souk', kind: 'grocery', x: 44, y: 52, area: 'Chott Salem' },
+  { id: 'm11', name: 'Marché Bio de l\'Oasis', kind: 'grocery', x: 27, y: 38, area: 'Sidi Driss' },
+  { id: 'm12', name: 'Supérette El Menzel', kind: 'grocery', x: 52, y: 24, area: 'Menzel' },
+  { id: 'm13', name: 'Fournil Sidi Driss', kind: 'bakery', x: 48, y: 44, area: 'Sidi Driss' },
+  { id: 'm14', name: 'Couscous House Oued Akhrich', kind: 'restaurant', x: 34, y: 48, area: 'Oued Akhrich' },
 ];
 
 // Catalogue de paniers par type de commerce (prix en millimes TND).

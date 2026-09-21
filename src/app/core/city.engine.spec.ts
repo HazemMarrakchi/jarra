@@ -18,7 +18,7 @@ describe('CityEngine (déterminisme)', () => {
     expect(engine.liveBaskets().length).toBe(engine.baskets.length);
   });
 
-  it('expose 14 commerçants répartis sur les quartiers de Tunis', () => {
+  it('expose 14 commerçants répartis sur les quartiers de Gabès', () => {
     const engine = new CityEngine(7);
     expect(engine.merchants.length).toBe(14);
     const areas = new Set(engine.merchants.map((m) => m.area));

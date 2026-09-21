@@ -17,7 +17,7 @@ export interface MapPin {
         viewBox="0 0 100 72"
         class="city-map"
         role="img"
-        aria-label="Carte de Tunis avec les commerçants Jarra"
+        aria-label="Carte de Gabès avec les commerçants Jarra"
         (click)="onBackgroundClick()"
       >
         <defs>
@@ -31,15 +31,15 @@ export interface MapPin {
           </filter>
         </defs>
 
-        <!-- fond : la mer (golfe de Tunis) -->
+        <!-- fond : la mer (golfe de Gabès) -->
         <rect width="100" height="72" rx="3" fill="#171410" />
         <path d="M64 0 Q78 14 74 30 Q71 44 82 54 Q92 62 100 60 L100 0 Z" fill="url(#seaGlow)" opacity="0.9" />
         <path d="M64 0 Q78 14 74 30 Q71 44 82 54 Q92 62 100 60" fill="none" stroke="#2c4256" stroke-width="0.35" opacity="0.8" />
 
-        <!-- lac de Tunis -->
+        <!-- oasis de Gabès -->
         <path d="M20 34 Q32 28 42 33 Q46 38 40 43 Q28 48 18 43 Q14 38 20 34 Z"
-          fill="#1b2836" stroke="#2c4256" stroke-width="0.25" opacity="0.9" />
-        <text x="29" y="40" class="water-label">Lac de Tunis</text>
+          fill="#2c3a24" stroke="#4a5a35" stroke-width="0.25" opacity="0.9" />
+        <text x="29" y="40" class="water-label">Oasis de Gabès</text>
 
         <!-- artères stylisées -->
         <g stroke="#33291d" stroke-width="0.5" fill="none" opacity="0.9">
@@ -57,12 +57,13 @@ export interface MapPin {
         <!-- labels de quartiers -->
         <g class="area-labels">
           <text x="55" y="56">Médina</text>
-          <text x="38" y="18.5">Ennasr</text>
-          <text x="62" y="14.5">Ariana</text>
-          <text x="76" y="8">Sidi Bou Saïd</text>
-          <text x="30" y="28">Les Berges du Lac</text>
-          <text x="34" y="53">Le Bardo</text>
-          <text x="82" y="25.5">La Marsa</text>
+          <text x="38" y="18.5">Chott Salem</text>
+          <text x="62" y="14.5">Teboulbou</text>
+          <text x="76" y="8">Cheniki</text>
+          <text x="30" y="28">L'Oasis</text>
+          <text x="34" y="53">Oued Akhrich</text>
+          <text x="82" y="25.5">Ghannouch</text>
+          <text x="52" y="20.5">Menzel</text>
         </g>
         <!-- pins des commerçants -->
         @for (pin of pins; track pin.merchant.id) {

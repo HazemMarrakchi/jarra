@@ -10,7 +10,7 @@ import { formatClock, formatTnd } from '../core/model';
   template: `
     <div class="shell">
       <header class="head rise">
-        <span class="eyebrow">🌍 Impact collectif · Tunis</span>
+        <span class="eyebrow">🌍 Impact collectif · Gabès</span>
         <h1>Ce que la ville a sauvé aujourd'hui</h1>
         <p class="sub">
           Chaque panier réservé et récupéré est comptabilisé ici, en direct.

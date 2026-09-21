@@ -12,7 +12,7 @@ import { formatTnd } from '../core/model';
       <!-- ── hero ─────────────────────────────────────────────── -->
       <section class="hero">
         <div class="hero-text rise">
-          <span class="eyebrow">🇹🇳 La plateforme anti-gaspillage · Tunis</span>
+          <span class="eyebrow">🇹🇳 La plateforme anti-gaspillage · Gabès</span>
           <h1>La bonne nourriture<br />mérite une <em>seconde vie</em>.</h1>
           <p class="lede">
             Chaque soir, les boulangeries, pâtisseries et restaurants de votre ville jettent
@@ -104,7 +104,7 @@ import { formatTnd } from '../core/model';
       <section class="impact-band rise">
         <h2>Ensemble, la ville jette <em style="color:var(--olive)">moins</em>.</h2>
         <p class="sub">
-          Chaque panier réservé est comptabilisé dans l'impact collectif de Tunis —
+          Chaque panier réservé est comptabilisé dans l'impact collectif de Gabès —
           repas sauvés, CO₂ évité, dinars réinjectés dans l'économie locale.
         </p>
         <a class="btn btn-primary" routerLink="/impact">🌍 Découvrir l'impact en direct</a>

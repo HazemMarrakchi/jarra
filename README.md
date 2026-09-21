@@ -1,8 +1,8 @@
-<div align="center">
+﻿<div align="center">
 
 # 🏺 JARRA
 
-### La plateforme tunisienne anti-gaspillage alimentaire
+### La plateforme anti-gaspillage alimentaire — née à Gabès 🇹🇳
 
 **Chaque jour, des tonnes de nourriture parfaitement consommable finissent à la poubelle pendant que des familles comptent chaque dinar.**
 **Jarra connecte les invendus des commerçants aux citoyens — en temps réel, sur la carte de votre ville.**
@@ -24,6 +24,14 @@
 | 💸 | Les familles et étudiants cherchent à manger bien sans se ruiner |
 | 🌱 | La nourriture jetée = eau, énergie, transport et CO₂ jetés avec elle |
 
+### Pourquoi commencer par Gabès ?
+
+> Gabès est la seule ville du monde où une **oasis date de la mer** — ici, la nourriture
+> est une fierté : le **croissant de Gabès**, les dattes de l'oasis, le poisson du port,
+> le souk de Chott Salem… Ce patrimoine mérite mieux que la poubelle. Jarra naît donc
+> dans **ses** quartiers : la Médina, Chott Salem, Teboulbou, Cheniki, Menzel,
+> Sidi Driss, Oued Akhrich, Ghannouch — avant de conquérir le reste du pays.
+
 ## 💡 La solution
 
 Jarra est une **marketplace de sauvetage alimentaire en temps réel** :
@@ -40,7 +48,7 @@ Jarra est une **marketplace de sauvetage alimentaire en temps réel** :
 
 👉 **[hazemmarrakchi.github.io/jarra](https://hazemmarrakchi.github.io/jarra/)**
 
-La démo tourne **100 % dans le navigateur** sur un moteur de simulation déterministe (ville de Tunis modélisée : commerçants, paniers, réservations et expirations en direct) — aucun backend requis pour l'explorer. La couche de données est **interchangeable** : le même front-end peut pointer vers l'API Supabase de production via une variable d'environnement.
+La démo tourne **100 % dans le navigateur** sur un moteur de simulation déterministe (ville de Gabès modélisée : commerçants, paniers, réservations et expirations en direct) — aucun backend requis pour l'explorer. La couche de données est **interchangeable** : le même front-end peut pointer vers l'API Supabase de production via une variable d'environnement.
 
 > 📱 **Mobile-first** : Jarra s'utilise dans la rue, sur un téléphone. Testez la démo sur mobile.
 
@@ -156,7 +164,7 @@ La CI exécute les tests à chaque push avant tout déploiement.
 ## 🛣️ Roadmap
 
 - [x] Design system complet (terracotta · sable · olive — l'argile de la jarra)
-- [x] Carte live vectorielle de Tunis, mobile-first
+- [x] Carte live vectorielle de Gabès, mobile-first
 - [x] Cycle complet : publication → réservation → code de retrait → validation
 - [x] Dashboard commerçant + prédiction des invendus
 - [x] Page Impact publique avec compteurs live
@@ -164,7 +172,7 @@ La CI exécute les tests à chaque push avant tout déploiement.
 - [ ] Paiement intégré (D17 / Flouci)
 - [ ] Notifications push (Web Push API)
 - [ ] Programme « Quartier Zéro Gaspillage » + open-data de l'impact
-- [ ] Extension : Sfax, Sousse, puis le Maghreb
+- [ ] Extension : Sfax, Sousse, Tunis — puis tout le Maghreb
 
 ---
 
