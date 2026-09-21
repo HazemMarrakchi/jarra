@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -44,3 +46,23 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist/jarra/browser
           force_orphan: true
+
+      # Garantit que les GitHub Pages servent bien la branche gh-pages
+      # (idempotent : POST crée le site, PUT met à jour la source).
+      - name: Enable GitHub Pages (gh-pages branch)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          repo="${GITHUB_REPOSITORY}"
+          echo "Configuring GitHub Pages to serve the gh-pages branch…"
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${repo}/pages" \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' || true
+          curl -sS -X PUT \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${repo}/pages" \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' || true
