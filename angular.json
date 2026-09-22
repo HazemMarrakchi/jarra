@@ -31,6 +31,7 @@
               "src/styles.css"
             ],
             "allowedCommonJsDependencies": ["maplibre-gl"],
+            "serviceWorker": "ngsw-config.json",
             "scripts": []
           }
         },
