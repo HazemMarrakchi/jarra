@@ -48,7 +48,7 @@ Jarra est une **marketplace de sauvetage alimentaire en temps réel** :
 
 👉 **[hazemmarrakchi.github.io/jarra](https://hazemmarrakchi.github.io/jarra/)**
 
-La démo tourne **100 % dans le navigateur** sur un moteur de simulation déterministe (ville de Gabès modélisée : commerçants, paniers, réservations et expirations en direct) — aucun backend requis pour l'explorer. La couche de données est **interchangeable** : le même front-end peut pointer vers l'API Supabase de production via une variable d'environnement.
+La démo tourne **100 % dans le navigateur** sur un moteur de simulation déterministe (ville de Gabès modélisée : commerçants, paniers, réservations et expirations en direct) — aucun backend requis pour l'explorer. La couche de données est **interchangeable** : le même front-end peut pointer vers l'API Supabase de production via une variable d'environnement. Le backend complet (schéma PostgreSQL, RLS, RPC transactionnelles, temps réel) est livré dans [`supabase/`](supabase/README.md) — 15 minutes suffisent pour passer en production.
 
 > 📱 **Mobile-first** : Jarra s'utilise dans la rue, sur un téléphone. Testez la démo sur mobile.
 
@@ -168,8 +168,8 @@ La CI exécute les tests à chaque push avant tout déploiement.
 - [x] Cycle complet : publication → réservation → code de retrait → validation
 - [x] Dashboard commerçant + prédiction des invendus
 - [x] Page Impact publique avec compteurs live
-- [ ] Provider Supabase (auth par téléphone OTP)
-- [ ] Paiement intégré (D17 / Flouci)
+- [x] Provider Supabase : schéma SQL, RLS, RPC transactionnelles, temps réel — voir [supabase/README.md](supabase/README.md)
+- [ ] Auth par téléphone OTP (commerçants) et paiement intégré (D17 / Flouci)
 - [ ] Notifications push (Web Push API)
 - [ ] Programme « Quartier Zéro Gaspillage » + open-data de l'impact
 - [ ] Extension : Sfax, Sousse, Tunis — puis tout le Maghreb

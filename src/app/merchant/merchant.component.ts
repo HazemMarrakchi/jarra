@@ -110,6 +110,12 @@ import { KIND_ICON } from '../core/ui';
               <label for="dUntil">Fin de créneau</label>
               <input id="dUntil" class="input" type="time" name="draftUntil" [(ngModel)]="draftUntil" />
             </div>
+            @if (store.mode === 'live') {
+              <div class="field">
+                <label for="dPin">Code commerçant (PIN)</label>
+                <input id="dPin" class="input" type="password" inputmode="numeric" autocomplete="off" name="draftPin" [(ngModel)]="draftPin" placeholder="Remis à l'onboarding" />
+              </div>
+            }
             <div class="field">
               <label>Remise</label>
               <div class="card-flat" style="padding:.7rem var(--space-md);display:flex;align-items:center;gap:var(--space-sm)">
@@ -117,8 +123,8 @@ import { KIND_ICON } from '../core/ui';
               </div>
             </div>
           </div>
-          <button class="btn btn-urgent" type="button" style="margin-top:var(--space-md)" (click)="publish()">
-            <span class="ms ms-18">bolt</span>Mettre en ligne maintenant (10s)
+          <button class="btn btn-urgent" type="button" style="margin-top:var(--space-md)" [disabled]="busy()" (click)="publish()">
+            <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'bolt' }}</span>{{ busy() ? 'Mise en ligne…' : 'Mettre en ligne maintenant (10s)' }}
           </button>
         </div>
 
@@ -191,8 +197,8 @@ import { KIND_ICON } from '../core/ui';
               style="flex:1 1 9rem"
               (keyup.enter)="collect()"
             />
-            <button class="btn btn-primary" type="button" [disabled]="codeInput.trim().length < 4" (click)="collect()">
-              <span class="ms ms-18">check</span>Valider retrait
+            <button class="btn btn-primary" type="button" [disabled]="codeInput.trim().length < 4 || busy()" (click)="collect()">
+              <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'check' }}</span>Valider retrait
             </button>
           </div>
           <button class="btn btn-ghost btn-sm" type="button" (click)="collectMsg.set('Scannez le QR code du client avec la caméra du comptoir.')">
@@ -292,6 +298,9 @@ export class MerchantComponent {
   draftRescue = 4;
   draftQty = 3;
   draftUntil = '21:30';
+  /** Code commerçant — vérifié par le backend en mode live (ignoré en démo). */
+  draftPin = '';
+  readonly busy = signal(false);
 
   readonly me = computed(() => {
     this.store.version();
@@ -377,37 +386,48 @@ export class MerchantComponent {
   }
 
   /** Valide un retrait avec le code client → l'impact est comptabilisé. */
-  collect(): void {
+  async collect(): Promise<void> {
     const code = this.codeInput.trim().toUpperCase();
-    if (code.length < 4) return;
-    const order = this.store.collect(code);
-    if (order) {
-      this.collectOk.set(true);
-      this.collectMsg.set(
-        `Retrait validé pour ${order.customerName === '__you__' ? 'le client' : order.customerName}. Un repas sauvé de plus.`,
-      );
-      this.codeInput = '';
-    } else {
-      this.collectOk.set(false);
-      this.collectMsg.set('Code introuvable ou déjà utilisé. Vérifiez auprès du client.');
+    if (code.length < 4 || this.busy()) return;
+    this.busy.set(true);
+    try {
+      const order = await this.store.collect(code);
+      if (order) {
+        this.collectOk.set(true);
+        this.collectMsg.set(
+          `Retrait validé pour ${order.customerName === '__you__' ? 'le client' : order.customerName}. Un repas sauvé de plus.`,
+        );
+        this.codeInput = '';
+      } else {
+        this.collectOk.set(false);
+        this.collectMsg.set('Code introuvable ou déjà utilisé. Vérifiez auprès du client.');
+      }
+    } finally {
+      this.busy.set(false);
     }
   }
 
   /** Publication express : le panier apparaît immédiatement sur la carte. */
-  publish(): void {
-    const basket = this.store.publish(this.selectedId(), {
-      title: this.draftTitle.trim() || 'Panier surprise',
-      description: 'Panier composé des invendus du jour, à récupérer avant la fermeture.',
-      originalPrice: Math.round(Number(this.draftOriginal) * 1000),
-      rescuePrice: Math.round(Number(this.draftRescue) * 1000),
-      quantity: Math.max(1, Math.min(20, Math.round(Number(this.draftQty)))),
-      pickupUntil: String(this.draftUntil),
-    });
-    this.publishMsg.set(
-      basket
-        ? `« ${basket.title} » est en ligne : visible sur la carte immédiatement.`
-        : 'Publication impossible : vérifiez les champs.',
-    );
+  async publish(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      const basket = await this.store.publish(this.selectedId(), {
+        title: this.draftTitle.trim() || 'Panier surprise',
+        description: 'Panier composé des invendus du jour, à récupérer avant la fermeture.',
+        originalPrice: Math.round(Number(this.draftOriginal) * 1000),
+        rescuePrice: Math.round(Number(this.draftRescue) * 1000),
+        quantity: Math.max(1, Math.min(20, Math.round(Number(this.draftQty)))),
+        pickupUntil: String(this.draftUntil),
+      }, this.draftPin.trim() || undefined);
+      this.publishMsg.set(
+        basket
+          ? `« ${basket.title} » est en ligne : visible sur la carte immédiatement.`
+          : 'Publication impossible : vérifiez les champs (et le code commerçant en mode connecté).',
+      );
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   clockLabel(): string {

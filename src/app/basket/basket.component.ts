@@ -79,8 +79,8 @@ import { PHOTOS } from '../core/photos';
                 </div>
               </div>
 
-              <button class="btn btn-urgent btn-lg" type="button" style="margin-top:var(--space-md)" [disabled]="!customerName.trim() || !!order()" (click)="reserve()">
-                <span class="ms ms-18">flash_on</span>Confirmer la réservation
+              <button class="btn btn-urgent btn-lg" type="button" style="margin-top:var(--space-md)" [disabled]="!customerName.trim() || !!order() || busy()" (click)="reserve()">
+                <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'flash_on' }}</span>{{ busy() ? 'Réservation en cours…' : 'Confirmer la réservation' }}
               </button>
               @if (!customerName.trim() && !order()) {
                 <p class="hint" style="margin-top:var(--space-sm)">Indiquez votre nom pour activer la réservation.</p>
@@ -197,6 +197,7 @@ export class BasketComponent {
   customerName = '';
   readonly order = signal<Order | null>(null);
   readonly qty = signal(1);
+  readonly busy = signal(false);
 
   readonly basket = computed(() => {
     this.store.version();
@@ -267,15 +268,20 @@ export class BasketComponent {
     return `${formatClock(b.pickupFromMin)} – ${formatClock(b.pickupToMin)}`;
   }
 
-  reserve(): void {
+  async reserve(): Promise<void> {
     const b = this.basket();
-    if (!b) return;
-    const order = this.store.reserve(b.id, this.customerName.trim());
-    if (order) this.order.set(order);
+    if (!b || this.busy()) return;
+    this.busy.set(true);
+    try {
+      const order = await this.store.reserve(b.id, this.customerName.trim());
+      if (order) this.order.set(order);
+    } finally {
+      this.busy.set(false);
+    }
   }
 
-  cancelOrder(): void {
+  async cancelOrder(): Promise<void> {
     const o = this.order();
-    if (o && this.store.cancel(o.id)) this.order.set(null);
+    if (o && (await this.store.cancel(o.id))) this.order.set(null);
   }
 }

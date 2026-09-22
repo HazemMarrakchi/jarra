@@ -141,8 +141,15 @@ const SLOTS: Slot[] = [
           </div>
         </div>
 
-        <button class="btn btn-urgent btn-lg btn-block" type="button" (click)="publish()">
-          <span class="ms ms-18">rocket_launch</span>Publier {{ qty() }} panier{{ qty() > 1 ? 's' : '' }} maintenant
+        @if (store.mode === 'live') {
+          <div class="card card-pad field">
+            <label for="pubPin">Code commerçant (PIN) — requis en mode connecté</label>
+            <input id="pubPin" class="input" type="password" inputmode="numeric" autocomplete="off"
+                   placeholder="Code remis à l'onboarding" [value]="pin" (input)="pin = $any($event.target).value" />
+          </div>
+        }
+        <button class="btn btn-urgent btn-lg btn-block" type="button" [disabled]="busy()" (click)="publish()">
+          <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'rocket_launch' }}</span>{{ busy() ? 'Publication…' : 'Publier ' + qty() + ' panier' + (qty() > 1 ? 's' : '') + ' maintenant' }}
           ({{ price(rescue() * 1000) }} DT / u)
         </button>
 
@@ -263,6 +270,9 @@ export class PublierComponent {
   readonly rescue = signal(CATEGORIES[0].rescue);
   readonly done = signal<{ title: string; quantityLeft: number } | null>(null);
   readonly scanMsg = signal<string | null>(null);
+  readonly busy = signal(false);
+  /** Code commerçant — vérifié par le backend en mode live (ignoré en démo). */
+  pin = '';
 
   readonly shopName = computed(() => this.store.merchant(this.shopId())?.name ?? '');
 
@@ -304,15 +314,21 @@ export class PublierComponent {
     this.scanMsg.set(`Rayon reconnu : ${c.label}. Vérifiez la quantité avant de publier.`);
   }
 
-  publish(): void {
-    const b = this.store.publish(this.shopId(), {
-      title: this.cat().title,
-      description: this.cat().description,
-      originalPrice: Math.round(this.original() * 1000),
-      rescuePrice: Math.round(this.rescue() * 1000),
-      quantity: this.qty(),
-      pickupUntil: `${String(Math.floor(this.slot().to / 60) % 24).padStart(2, '0')}:${String(this.slot().to % 60).padStart(2, '0')}`,
-    });
-    this.done.set(b ? { title: b.title, quantityLeft: b.quantityLeft } : null);
+  async publish(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      const b = await this.store.publish(this.shopId(), {
+        title: this.cat().title,
+        description: this.cat().description,
+        originalPrice: Math.round(this.original() * 1000),
+        rescuePrice: Math.round(this.rescue() * 1000),
+        quantity: this.qty(),
+        pickupUntil: `${String(Math.floor(this.slot().to / 60) % 24).padStart(2, '0')}:${String(this.slot().to % 60).padStart(2, '0')}`,
+      }, this.pin.trim() || undefined);
+      this.done.set(b ? { title: b.title, quantityLeft: b.quantityLeft } : null);
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

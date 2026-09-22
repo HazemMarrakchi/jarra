@@ -1,26 +1,48 @@
-﻿// ═══════════════════════════════════════════════════════════════════
-// JARRA — Store de données réactif
-// Expose la ville simulée via des signals Angular. Demain, un
-// SupabaseProvider implémentera les mêmes méthodes sans toucher au UI.
+// ═══════════════════════════════════════════════════════════════════
+// JARRA — Store de données réactif (façade)
+// Expose l'état de la plateforme via des signals Angular. Délègue à un
+// DataProvider : DemoProvider (simulation in-browser) ou
+// SupabaseProvider (production) selon src/environments/environment.ts.
+// Le UI ne sait pas à quel backend il parle.
 // ═══════════════════════════════════════════════════════════════════
 
 import { Injectable, OnDestroy, signal } from '@angular/core';
-import { CityEngine, DAY_START_MIN } from './city.engine';
+import { environment } from '../../environments/environment';
+import { DAY_START_MIN } from './city.engine';
+import { DataProvider, PublishDraft } from './data.provider';
+import { DemoProvider } from './demo.provider';
+import { SupabaseProvider } from './supabase.provider';
 import { Basket, ImpactStats, Merchant, Order, WeeklyTrend } from './model';
 
-/** Intervalle réel entre deux minutes simulées (la journée est accélérée). */
-const TICK_MS = 350;
+/** Démo : 350 ms par minute simulée. Live : rafraîchit horloge/statuts. */
+const DEMO_TICK_MS = 350;
+const LIVE_TICK_MS = 20_000;
+
+const EMPTY_IMPACT: ImpactStats = {
+  mealsSaved: 0, co2KgAvoided: 0, tndSaved: 0, merchantsActive: 0, byArea: [],
+};
+
+/** Choisit le backend : Supabase si configuré, sinon simulation démo. */
+function createProvider(): DataProvider {
+  if (environment.supabaseUrl && environment.supabaseAnonKey) {
+    return new SupabaseProvider(environment.supabaseUrl, environment.supabaseAnonKey);
+  }
+  return new DemoProvider(7);
+}
 
 @Injectable({ providedIn: 'root' })
 export class CityStore implements OnDestroy {
-  private engine = new CityEngine(7);
+  private readonly provider: DataProvider = createProvider();
 
-  readonly merchants = signal<readonly Merchant[]>(this.engine.merchants);
+  /** 'demo' = ville simulée · 'live' = backend Supabase temps réel. */
+  readonly mode = this.provider.mode;
+
+  readonly merchants = signal<readonly Merchant[]>([]);
   readonly baskets = signal<readonly Basket[]>([]);
   readonly orders = signal<readonly Order[]>([]);
   readonly clockMin = signal(DAY_START_MIN);
-  readonly impact = signal<ImpactStats>(this.engine.impact());
-  readonly trend = signal<readonly WeeklyTrend[]>(this.engine.weeklyTrend());
+  readonly impact = signal<ImpactStats>(EMPTY_IMPACT);
+  readonly trend = signal<readonly WeeklyTrend[]>([]);
 
   /** Version qui s'incrémente à chaque changement — pour les computed. */
   readonly version = signal(0);
@@ -28,66 +50,77 @@ export class CityStore implements OnDestroy {
   private timer = 0;
 
   constructor() {
-    this.refresh();
-    // En test (Jasmine) on ne démarre pas la boucle de simulation.
+    // Le provider démo est prêt immédiatement (synchrone) ; le provider
+    // live pousse son état via onChange une fois le chargement terminé.
+    this.applySnapshot();
+    void this.provider.init(() => this.applySnapshot());
+    // En test (Jasmine) on ne démarre pas la boucle de temps.
     if (typeof window !== 'undefined' && !('__karma__' in window)) {
-      this.timer = window.setInterval(() => this.advance(), TICK_MS);
+      this.timer = window.setInterval(
+        () => this.advance(),
+        this.mode === 'demo' ? DEMO_TICK_MS : LIVE_TICK_MS,
+      );
     }
   }
 
   ngOnDestroy(): void {
     window.clearInterval(this.timer);
+    this.provider.destroy();
   }
 
-  /** Avance la ville ; ne notifie que si quelque chose a changé. */
+  /** Avance le temps ; ne notifie que si quelque chose a changé. */
   advance(): void {
-    if (this.engine.tick()) this.refresh();
-    this.clockMin.set(this.engine.clockMin);
+    if (this.provider.tick?.()) {
+      this.applySnapshot();
+    } else {
+      this.clockMin.set(this.provider.snapshot().clockMin);
+    }
   }
 
-  reserve(basketId: string, customerName: string): Order | null {
-    const order = this.engine.reserve(basketId, customerName);
-    if (order) this.refresh();
+  async reserve(basketId: string, customerName: string): Promise<Order | null> {
+    const order = await this.provider.reserve(basketId, customerName);
+    if (order) this.applySnapshot();
     return order;
   }
 
-  collect(code: string): Order | null {
-    const order = this.engine.collect(code);
-    if (order) this.refresh();
+  async collect(code: string): Promise<Order | null> {
+    const order = await this.provider.collect(code);
+    if (order) this.applySnapshot();
     return order;
   }
 
-  /** Publication express d'un commerçant (dashboard). */
-  publish(
-    merchantId: string,
-    draft: {
-      title: string; description: string; originalPrice: number;
-      rescuePrice: number; quantity: number; pickupUntil: string;
-    },
-  ): Basket | null {
-    const basket = this.engine.publish(merchantId, draft);
-    if (basket) this.refresh();
+  /**
+   * Publication express d'un commerçant. En mode live, `pin` est le code
+   * commerçant vérifié par le backend (ignoré en démo).
+   */
+  async publish(merchantId: string, draft: PublishDraft, pin?: string): Promise<Basket | null> {
+    const basket = await this.provider.publish(merchantId, draft, pin);
+    if (basket) this.applySnapshot();
     return basket;
   }
 
-  cancel(orderId: string): boolean {
-    const ok = this.engine.cancel(orderId);
-    if (ok) this.refresh();
+  async cancel(orderId: string): Promise<boolean> {
+    const ok = await this.provider.cancel(orderId);
+    if (ok) this.applySnapshot();
     return ok;
   }
 
   merchant(id: string): Merchant | undefined {
-    return this.engine.merchant(id);
+    return this.merchants().find((m) => m.id === id);
   }
 
   basketsOf(merchantId: string): readonly Basket[] {
-    return this.engine.basketsOf(merchantId);
+    return this.baskets().filter((b) => b.merchantId === merchantId);
   }
 
-  private refresh(): void {
-    this.baskets.set([...this.engine.baskets]);
-    this.orders.set([...this.engine.orders]);
-    this.impact.set(this.engine.impact());
+  private applySnapshot(): void {
+    const s = this.provider.snapshot();
+    this.merchants.set(s.merchants);
+    this.baskets.set(s.baskets);
+    this.orders.set(s.orders);
+    this.impact.set(s.impact);
+    this.trend.set(s.trend);
+    this.clockMin.set(s.clockMin);
     this.version.update((v) => v + 1);
   }
 }

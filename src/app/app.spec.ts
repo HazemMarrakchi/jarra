@@ -155,14 +155,14 @@ describe('MerchantComponent (dashboard)', () => {
     expect(component.prediction().confidence).toBeGreaterThanOrEqual(45);
   });
 
-  it('publie un panier qui apparaît immédiatement dans la liste du commerçant', () => {
+  it('publie un panier qui apparaît immédiatement dans la liste du commerçant', async () => {
     const fixture = TestBed.createComponent(MerchantComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const before = component.myBaskets().length;
 
     component.draftTitle = 'Panier test';
-    component.publish();
+    await component.publish();
     fixture.detectChanges();
 
     expect(component.myBaskets().length).toBe(before + 1);
@@ -170,29 +170,29 @@ describe('MerchantComponent (dashboard)', () => {
     expect(component.publishMsg()).toContain('en ligne');
   });
 
-  it('valide un retrait via le code client et incrémente les repas sauvés', () => {
+  it('valide un retrait via le code client et incrémente les repas sauvés', async () => {
     const fixture = TestBed.createComponent(MerchantComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
     const basket = component.myBaskets().find((b) => b.status === 'live')!;
-    const order = component.store.reserve(basket.id, 'Client test')!;
+    const order = (await component.store.reserve(basket.id, 'Client test'))!;
 
     component.codeInput = order.pickupCode;
-    component.collect();
+    await component.collect();
     fixture.detectChanges();
 
     expect(component.collectOk()).toBeTrue();
     expect(component.collectMsg()).toContain('sauvé');
   });
 
-  it('signale un code invalide', () => {
+  it('signale un code invalide', async () => {
     const fixture = TestBed.createComponent(MerchantComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
     component.codeInput = 'ZZZZ';
-    component.collect();
+    await component.collect();
 
     expect(component.collectOk()).toBeFalse();
     expect(component.collectMsg()).toContain('introuvable');
