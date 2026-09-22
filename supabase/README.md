@@ -123,6 +123,19 @@ via le service worker PWA déjà en place. Aucun SMS, aucun coût.
 
 - [x] Auth commerçant par téléphone OTP (colonne `merchants.owner_id`)
 - [x] `collect_order` durci : propriétaire connecté exigé pour les commerces liés
-- [ ] Changer les PIN par défaut (`1234`) puis lier chaque commerce à son numéro
+- [x] PIN aléatoire unique par commerçant (`migration-pins.sql`)
 - [x] Notifications push (Web Push API + Edge Function)
-- [ ] Paiement intégré (D17 / Flouci)
+- [ ] Paiement intégré (D17 / Flouci) — nécessite un budget
+
+## ✅ Checklist de lancement pilote
+
+1. [x] `schema.sql` + `seed.sql` exécutés
+2. [x] `migration-auth.sql` exécutée + Provider Phone activé
+3. [x] `migration-pins.sql` exécutée — PINs uniques générés (CSV conservé hors git)
+4. [ ] `migration-push.sql` exécutée (SQL Editor)
+5. [ ] Edge Function `notify-baskets` déployée + secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`
+6. [ ] Numéros de test OTP — **Authentication → Providers → Phone → Test phone numbers** :
+      un numéro par commerçant, ex. `+21620000001` → code fixe `123456`
+7. [ ] Chaque commerçant lie son commerce à son numéro
+      (`/commercant` → Recevoir le code → « Lier ce commerce »)
+8. [ ] Distribuer les PINs + former au scan QR au comptoir

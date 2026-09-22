@@ -169,9 +169,11 @@ La CI exécute les tests à chaque push avant tout déploiement.
 - [x] Dashboard commerçant + prédiction des invendus
 - [x] Page Impact publique avec compteurs live
 - [x] Provider Supabase : schéma SQL, RLS, RPC transactionnelles, temps réel — voir [supabase/README.md](supabase/README.md)
-- [ ] Auth par téléphone OTP (commerçants) et paiement intégré (D17 / Flouci)
-- [ ] Notifications push (Web Push API)
-- [ ] Programme « Quartier Zéro Gaspillage » + open-data de l'impact
+- [x] Auth par téléphone OTP (commerçants) — étape 2
+- [x] PIN unique par commerçant, QR de retrait, notifications push (Web Push) — étape 3
+- [x] Open-data de l'impact (export CSV public sur la page Impact)
+- [ ] Paiement intégré (D17 / Flouci) — nécessite un budget (comptes marchands)
+- [ ] Programme « Quartier Zéro Gaspillage » (animation quartier, partenaires)
 - [ ] Extension : Sfax, Sousse, Tunis — puis tout le Maghreb
 
 ---

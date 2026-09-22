@@ -98,7 +98,12 @@ import { KIND_ICON, KIND_LONG, KINDS } from '../core/ui';
             <h2 class="headline-sm">Tendance de la semaine</h2>
             <p class="body-sm muted" style="margin-top:4px">Repas sauvés par jour sur la semaine écoulée.</p>
           </div>
-          <span class="eco-badge"><span class="ms" style="font-size:14px">trending_up</span>{{ weekTotal() }} sur 7 jours</span>
+          <div class="row gap-sm" style="align-items:center">
+            <span class="eco-badge"><span class="ms" style="font-size:14px">trending_up</span>{{ weekTotal() }} sur 7 jours</span>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="exportCsv()">
+              <span class="ms ms-18">download</span> Open-data (CSV)
+            </button>
+          </div>
         </div>
         <div class="chart">
           @for (d of trend(); track d.day) {
@@ -294,4 +299,31 @@ export class ImpactComponent {
       .sort((a, b) => b.meals - a.meals)
       .slice(0, 3);
   });
+
+  /** Export open-data : indicateurs + quartiers + tendance hebdo en CSV.
+   *  Données publiques, réutilisables librement (municipalité, presse, ONG). */
+  exportCsv(): void {
+    const i = this.impact();
+    const lines = [
+      'indicateur;valeur',
+      `repas_sauves_total;${i.mealsSaved}`,
+      `co2_evite_kg;${i.co2KgAvoided}`,
+      `economies_tnd;${i.tndSaved.toFixed(3)}`,
+      `commerces_actifs;${i.merchantsActive}`,
+      '',
+      'quartier;repas_sauves',
+      ...i.byArea.map((a) => `${a.area};${a.meals}`),
+      '',
+      'jour;repas_sauves',
+      ...this.trend().map((d) => `${d.day};${d.meals}`),
+    ];
+    // BOM ﻿ pour qu'Excel (FR) lise correctement l'UTF-8 et le « ; ».
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jarra-impact-gabes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }
