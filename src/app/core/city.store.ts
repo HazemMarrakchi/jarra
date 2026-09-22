@@ -140,6 +140,21 @@ export class CityStore implements OnDestroy {
     this.applySnapshot();
   }
 
+  // ── Notifications push (live uniquement) ──────────────────────────
+
+  /** Enregistre l'abonnement Web Push de cet appareil. Faux en démo. */
+  async savePushSubscription(sub: {
+    endpoint: string;
+    keys?: { p256dh?: string; auth?: string };
+  }): Promise<boolean> {
+    return (await this.provider.savePushSubscription?.(sub)) ?? false;
+  }
+
+  /** Supprime l'abonnement Web Push de cet appareil. */
+  async deletePushSubscription(endpoint: string): Promise<boolean> {
+    return (await this.provider.deletePushSubscription?.(endpoint)) ?? false;
+  }
+
   merchant(id: string): Merchant | undefined {
     return this.merchants().find((m) => m.id === id);
   }

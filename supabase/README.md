@@ -90,10 +90,39 @@ La migration [`migration-auth.sql`](./migration-auth.sql) ajoute :
 3. **Lier ce commerce** avec le PIN actuel (une dernière fois) → le commerce
    devient « le sien » : publication sans PIN, retraits protégés par session
 
+## Notifications Web Push (étape 3c — 100 % gratuit)
+
+Alerte « nouveau panier » envoyée à tous les appareils abonnés (citoyens),
+via le service worker PWA déjà en place. Aucun SMS, aucun coût.
+
+### Mise en route (dashboard Supabase uniquement)
+
+1. **SQL Editor** → coller [`migration-push.sql`](./migration-push.sql) → **Run**
+   (crée la table `push_subscriptions` : inscription/désinscription libres,
+   lecture réservée au service role).
+2. **Edge Functions** → **Create function** → nom : `notify-baskets` →
+   coller le contenu de [`functions/notify-baskets/index.ts`](./functions/notify-baskets/index.ts) → **Deploy**.
+3. **Edge Functions → Secrets** : ajouter
+   - `VAPID_PUBLIC_KEY` = la clé publique (identique à celle de `environment.ts`)
+   - `VAPID_PRIVATE_KEY` = la clé privée associée (**jamais dans git**)
+   (`SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont injectés automatiquement.)
+
+### Fonctionnement
+
+1. Sur `/explorer`, la carte **« 🔔 Alertes nouveaux paniers »** abonne
+   l'appareil (permission navigateur → abonnement stocké en base).
+2. À chaque publication, l'app appelle `notify-baskets` ; la fonction
+   **revérifie le panier en base** (anti-spam) puis pousse la notif à tous.
+3. Les abonnements expirés (404/410) sont purgés automatiquement.
+4. Le clic sur la notif ouvre `/explorer` (géré par le service worker Angular).
+
+> Limite honnête : iOS exige que l'app soit « installée » sur l'écran
+> d'accueil (PWA) pour recevoir des notifications. Android/Chrome : direct.
+
 ## Étapes suivantes (roadmap)
 
 - [x] Auth commerçant par téléphone OTP (colonne `merchants.owner_id`)
 - [x] `collect_order` durci : propriétaire connecté exigé pour les commerces liés
 - [ ] Changer les PIN par défaut (`1234`) puis lier chaque commerce à son numéro
+- [x] Notifications push (Web Push API + Edge Function)
 - [ ] Paiement intégré (D17 / Flouci)
-- [ ] Notifications push (Web Push API)

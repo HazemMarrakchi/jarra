@@ -145,6 +145,7 @@ export class SupabaseProvider implements DataProvider {
     });
     if (!data) return null;
     await this.reloadSafe();
+    this.notifySubscribers(data.id); // étape 3c — alerte push, best effort
     const row = this.basketRows.find((b) => b.id === data.id);
     return row ? this.toBasket(row, new Date()) : null;
   }
@@ -204,6 +205,38 @@ export class SupabaseProvider implements DataProvider {
   async signOut(): Promise<void> {
     await this.client?.auth.signOut();
     this.setSessionUser(null, null);
+  }
+
+  // ── Notifications push (étape 3c) ─────────────────────────────────
+
+  async savePushSubscription(sub: {
+    endpoint: string;
+    keys?: { p256dh?: string; auth?: string };
+  }): Promise<boolean> {
+    if (!this.client || !sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return false;
+    const { error } = await this.client.from('push_subscriptions').upsert(
+      { endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+      { onConflict: 'endpoint' },
+    );
+    if (error) {
+      console.warn('[Jarra] Abonnement push impossible', error.message);
+      return false;
+    }
+    return true;
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<boolean> {
+    if (!this.client || !endpoint) return false;
+    const { error } = await this.client.from('push_subscriptions').delete().eq('endpoint', endpoint);
+    return !error;
+  }
+
+  /** Alerte les abonnés via l'Edge Function — best effort, jamais bloquant. */
+  private notifySubscribers(basketId: string): void {
+    if (!this.client) return;
+    void Promise.resolve(
+      this.client.functions.invoke('notify-baskets', { body: { basketId } }),
+    ).catch((err) => console.warn('[Jarra] Notification push non envoyée', err));
   }
 
   /** Supabase renvoie le téléphone sans « + » — on normalise en E.164. */

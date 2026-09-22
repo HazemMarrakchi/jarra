@@ -91,5 +91,16 @@ export interface DataProvider {
   /** Ferme la session commerçant. */
   signOut?(): Promise<void>;
 
+  // ── Notifications push (étape 3c — optionnel, live uniquement) ────
+
+  /** Enregistre l'abonnement Web Push de cet appareil (upsert par endpoint). */
+  savePushSubscription?(sub: {
+    endpoint: string;
+    keys?: { p256dh?: string; auth?: string };
+  }): Promise<boolean>;
+
+  /** Supprime l'abonnement Web Push de cet appareil. */
+  deletePushSubscription?(endpoint: string): Promise<boolean>;
+
   destroy(): void;
 }
