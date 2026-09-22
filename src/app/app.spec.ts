@@ -230,7 +230,7 @@ describe('LoginComponent (verrou global)', () => {
     const fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Connexion');
+    expect(text).toContain('Bienvenue');
     expect(text).toContain('démo');
   });
 });

@@ -129,6 +129,7 @@ import { LivePillComponent } from './core/ticker.component';
     </nav>
     }
 
+    @if (!locked()) {
     <footer class="foot">
       <div class="shell-lg">
         <div class="foot-grid">
@@ -146,7 +147,6 @@ import { LivePillComponent } from './core/ticker.component';
             <p class="mono-num" style="color:var(--secondary);margin-top:8px">{{ impact().mealsSaved }} repas sauvés</p>
           </div>
 
-          @if (!locked()) {
           <div>
             <h4>Filières Gourmandes</h4>
             <a routerLink="/explorer">Boulangeries &amp; Tabounas</a>
@@ -168,7 +168,6 @@ import { LivePillComponent } from './core/ticker.component';
             <a routerLink="/admin">Administration pilote</a>
             <a href="https://github.com/HazemMarrakchi/jarra" target="_blank" rel="noopener">Code source</a>
           </div>
-          }
         </div>
         <div class="foot-bot">
           <span>© 2026 Jarra.tn — conçu et développé à Gabès, Tunisie</span>
@@ -176,6 +175,7 @@ import { LivePillComponent } from './core/ticker.component';
         </div>
       </div>
     </footer>
+    }
   `,
   styles: [`
     .skip {
