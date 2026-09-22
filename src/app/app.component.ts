@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CityStore } from './core/city.store';
+import { PushService } from './core/push.service';
 import { LivePillComponent } from './core/ticker.component';
 
 @Component({
@@ -54,6 +55,28 @@ import { LivePillComponent } from './core/ticker.component';
         </nav>
 
         <div class="top-right">
+          @if (push.available) {
+            <button
+              class="bell-btn"
+              type="button"
+              [class.on]="push.state() === 'on'"
+              [disabled]="push.busy() || push.state() === 'denied'"
+              [attr.aria-pressed]="push.state() === 'on'"
+              [attr.aria-label]="push.label()"
+              [title]="push.label()"
+              (click)="push.toggle()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
+                />
+              </svg>
+              @if (push.state() === 'on') {
+                <span class="bell-dot" aria-hidden="true"></span>
+              }
+            </button>
+          }
           <a class="btn btn-primary btn-sm top-cta" routerLink="/publier">
             <span class="ms ms-18">bolt</span>Publier un invendu en 10s
           </a>
@@ -158,10 +181,34 @@ import { LivePillComponent } from './core/ticker.component';
       padding: 11px 16px; border-radius: var(--r-md); font-weight: 600; transition: top .2s;
     }
     .skip:focus { top: 12px; }
+    /* Cloche notifications (PushService) — visible sur toutes les pages */
+    .bell-btn {
+      position: relative; display: grid; place-items: center;
+      width: 38px; height: 38px; border-radius: 999px;
+      border: 1px solid rgba(60, 50, 40, .18);
+      background: transparent; color: inherit;
+      cursor: pointer; transition: all .2s;
+    }
+    .bell-btn svg { width: 20px; height: 20px; }
+    .bell-btn:hover:not(:disabled) {
+      background: var(--secondary-container); color: var(--primary);
+      box-shadow: var(--shadow-2); transform: translateY(-1px);
+    }
+    .bell-btn.on {
+      color: var(--primary); border-color: var(--primary);
+      background: var(--primary-container);
+    }
+    .bell-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .bell-dot {
+      position: absolute; top: 5px; right: 6px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--secondary); border: 2px solid #fff;
+    }
   `],
 })
 export class AppComponent {
   private readonly store = inject(CityStore);
+  readonly push = inject(PushService);
   readonly impact = this.store.impact;
   menu = false;
 }

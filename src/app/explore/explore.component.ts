@@ -1,13 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SwPush } from '@angular/service-worker';
-import { firstValueFrom } from 'rxjs';
 import { BasketListComponent } from '../core/basket-list.component';
 import { CityMapComponent, MapPin } from '../core/city-map.component';
 import { CityStore } from '../core/city.store';
+import { PushService } from '../core/push.service';
 import { Basket, Merchant, MerchantKind, formatClock } from '../core/model';
 import { CITIZEN_POS, KINDS, KIND_ICON, KIND_LONG, distanceM, formatDistance } from '../core/ui';
-import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'jr-explore',
@@ -39,18 +37,18 @@ import { environment } from '../../environments/environment';
                 <p class="headline-sm mono-num">{{ clock() }} • Gabès</p>
               </div>
             </div>
-            @if (pushAvailable) {
+            @if (push.available) {
               <button
                 class="update-card push-btn"
                 type="button"
-                [disabled]="pushBusy() || pushState() === 'denied'"
-                [attr.aria-pressed]="pushState() === 'on'"
-                (click)="togglePush()"
+                [disabled]="push.busy() || push.state() === 'denied'"
+                [attr.aria-pressed]="push.state() === 'on'"
+                (click)="push.toggle()"
               >
-                <span class="ms ms-24" [class.ms-fill]="pushState() === 'on'">{{ pushState() === 'on' ? 'notifications_active' : 'notifications' }}</span>
+                <span class="ms ms-24" [class.ms-fill]="push.state() === 'on'">{{ push.state() === 'on' ? 'notifications_active' : 'notifications' }}</span>
                 <div style="text-align:start">
                   <span class="label-sm muted" style="text-transform:uppercase">Alertes nouveaux paniers</span>
-                  <p class="label-lg">{{ pushLabel() }}</p>
+                  <p class="label-lg">{{ push.label() }}</p>
                 </div>
               </button>
             }
@@ -277,10 +275,10 @@ import { environment } from '../../environments/environment';
     @media (min-width: 900px) { .alert-band { grid-template-columns: minmax(0, 1fr) auto; } }
   `],
 })
-export class ExploreComponent implements OnInit {
+export class ExploreComponent {
   private readonly store = inject(CityStore);
-  /** Optionnel : absent des tests unitaires et du mode démo. */
-  private readonly swPush = inject(SwPush, { optional: true });
+  /** Notifications push (étape 3c) : logique centralisée, partagée avec le header. */
+  readonly push = inject(PushService);
 
   readonly kinds = KINDS;
   readonly kindFilter = signal<MerchantKind | 'all'>('all');
@@ -388,72 +386,7 @@ export class ExploreComponent implements OnInit {
     return KIND_LONG[kind];
   }
 
-  // ── Notifications push (étape 3c — live uniquement) ───────────────
-
-  /** Push possible seulement en prod : service worker actif + backend live. */
-  readonly pushAvailable = this.store.mode === 'live' && this.swPush?.isEnabled === true;
-  readonly pushState = signal<'off' | 'on' | 'denied'>('off');
-  readonly pushBusy = signal(false);
-
-  readonly pushLabel = computed(() => {
-    switch (this.pushState()) {
-      case 'on': return 'Activées';
-      case 'denied': return 'Bloquées (navigateur)';
-      default: return 'Activer';
-    }
-  });
-
-  ngOnInit(): void {
-    if (this.pushAvailable) void this.syncPushState();
-  }
-
-  /** Clic sur la carte 🔔 : abonne ou désabonne cet appareil. */
-  async togglePush(): Promise<void> {
-    const swPush = this.swPush;
-    if (this.pushBusy() || !swPush) return;
-    this.pushBusy.set(true);
-    try {
-      if (this.pushState() === 'on') {
-        const sub = await firstValueFrom(swPush.subscription);
-        if (sub) {
-          await this.store.deletePushSubscription(sub.endpoint);
-          await sub.unsubscribe();
-        }
-        this.pushState.set('off');
-      } else {
-        const sub = await swPush.requestSubscription({
-          serverPublicKey: environment.vapidPublicKey,
-        });
-        const ok = await this.store.savePushSubscription({
-          endpoint: sub.endpoint,
-          keys: sub.toJSON().keys,
-        });
-        this.pushState.set(ok ? 'on' : 'off');
-        if (!ok) await sub.unsubscribe();
-      }
-    } catch {
-      // Permission refusée ou navigateur incompatible → état lisible.
-      this.pushState.set(this.pushDenied() ? 'denied' : 'off');
-    } finally {
-      this.pushBusy.set(false);
-    }
-  }
-
-  /** Resynchronise l'état au chargement (abonnement existant ? refus ?). */
-  private async syncPushState(): Promise<void> {
-    const swPush = this.swPush;
-    if (!swPush) return;
-    if (this.pushDenied()) {
-      this.pushState.set('denied');
-      return;
-    }
-    const sub = await firstValueFrom(swPush.subscription);
-    this.pushState.set(sub ? 'on' : 'off');
-  }
-
-  private pushDenied(): boolean {
-    return typeof Notification !== 'undefined' && Notification.permission === 'denied';
-  }
+  // ── Notifications push : voir PushService (cloche du header + carte ci-dessus)
 
   clock(): string {
     return formatClock(this.store.clockMin());
