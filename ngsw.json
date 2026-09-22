@@ -1,0 +1,146 @@
+{
+  "configVersion": 1,
+  "timestamp": 1790111219095,
+  "index": "/jarra/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/jarra/chunk-2JXCTBHG.js",
+        "/jarra/chunk-4EXTSTO2.js",
+        "/jarra/chunk-6TA66EOL.js",
+        "/jarra/chunk-75KUDYQ7.js",
+        "/jarra/chunk-7B7FAZKR.js",
+        "/jarra/chunk-7VQO455W.js",
+        "/jarra/chunk-BACI5MP6.js",
+        "/jarra/chunk-DITBLBWF.js",
+        "/jarra/chunk-IHUJAFYL.js",
+        "/jarra/chunk-IWFYP27C.js",
+        "/jarra/chunk-L2LEZHWY.js",
+        "/jarra/chunk-MNA2RYM7.js",
+        "/jarra/chunk-Q3BS63Y3.js",
+        "/jarra/chunk-QGCEKL6G.js",
+        "/jarra/chunk-S7LXIB6A.js",
+        "/jarra/chunk-TKYIJHZO.js",
+        "/jarra/chunk-V7VSPFB7.js",
+        "/jarra/chunk-YIJSGXRL.js",
+        "/jarra/favicon.svg",
+        "/jarra/index.html",
+        "/jarra/main.js",
+        "/jarra/manifest.webmanifest",
+        "/jarra/polyfills.js",
+        "/jarra/styles.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/jarra/assets/img/hero-comptoir.jpg",
+        "/jarra/assets/img/jarra-argile.jpg",
+        "/jarra/assets/img/panier-boulangerie.jpg",
+        "/jarra/assets/img/panier-primeur.jpg",
+        "/jarra/assets/img/panier-traiteur.jpg",
+        "/jarra/assets/img/patisseries-fines.jpg",
+        "/jarra/assets/img/portrait-commercant.jpg",
+        "/jarra/assets/img/vitrine-boutique.jpg"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "google-fonts",
+      "patterns": [
+        "https:\\/\\/fonts\\.googleapis\\.com\\/.*",
+        "https:\\/\\/fonts\\.gstatic\\.com\\/.*"
+      ],
+      "strategy": "performance",
+      "maxSize": 50,
+      "maxAge": 2592000000,
+      "timeoutMs": 5000,
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "version": 1
+    },
+    {
+      "name": "map-tiles",
+      "patterns": [
+        "https:\\/\\/basemaps\\.cartocdn\\.com\\/.*",
+        "https:\\/\\/[^/]*\\.basemaps\\.cartocdn\\.com\\/.*"
+      ],
+      "strategy": "performance",
+      "maxSize": 400,
+      "maxAge": 604800000,
+      "timeoutMs": 8000,
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "version": 1
+    }
+  ],
+  "hashTable": {
+    "/jarra/assets/img/hero-comptoir.jpg": "31737439448278582510e3fd6ecceacb9e1ec2e1",
+    "/jarra/assets/img/jarra-argile.jpg": "fa93bca7bf72c34cf469742a7d578cc33c564b79",
+    "/jarra/assets/img/panier-boulangerie.jpg": "98d3c0fc5464955cfe1fa135037570f600787de5",
+    "/jarra/assets/img/panier-primeur.jpg": "03ed45f88152d04838b8c6a567b842973a320205",
+    "/jarra/assets/img/panier-traiteur.jpg": "90693af6dff81690c250bc9b9f432829e2552452",
+    "/jarra/assets/img/patisseries-fines.jpg": "5730fbd0af07d50946d7ca22aa21b0c3276ff59a",
+    "/jarra/assets/img/portrait-commercant.jpg": "6811bdbc7e3607d51f78cb08f407c696bd9813d6",
+    "/jarra/assets/img/vitrine-boutique.jpg": "892c613d7e106c4d7bda9c13897c3773573a4597",
+    "/jarra/chunk-2JXCTBHG.js": "d60552bf9685b2ab0aeb332a47302b7d296357e5",
+    "/jarra/chunk-4EXTSTO2.js": "5114c8a3d1396f7d032509f19816193e9a8ffdac",
+    "/jarra/chunk-6TA66EOL.js": "50fd7224bd4ac66607dc16eb66c60d0c783552fd",
+    "/jarra/chunk-75KUDYQ7.js": "1e2cebae93b44e6001bcc478bb3fb4e91bf9c94b",
+    "/jarra/chunk-7B7FAZKR.js": "f9157100d52761828241a4c8ebad80008428dabf",
+    "/jarra/chunk-7VQO455W.js": "99136d04a337a9a1be05552e3ac1a5d04e19b3e9",
+    "/jarra/chunk-BACI5MP6.js": "d3eb3e820afa6883ad67e416eb35d1d3c1acfa96",
+    "/jarra/chunk-DITBLBWF.js": "96b8b4c60847aeedfea5956e657e1159a9949b7c",
+    "/jarra/chunk-IHUJAFYL.js": "f050adb0cee698ee2a39dc5c9e598a2ea64f0b81",
+    "/jarra/chunk-IWFYP27C.js": "665187bea0f5a00c4a47e0d666d37c1903ecb2a6",
+    "/jarra/chunk-L2LEZHWY.js": "7f2bd3d70280691a757b60350b4f05a04c8b8cde",
+    "/jarra/chunk-MNA2RYM7.js": "b60b3c8dff6a9a6b60a051f7d82e802d3ce514e8",
+    "/jarra/chunk-Q3BS63Y3.js": "284489fb53fbd09fe16805e28fc88d869865aeef",
+    "/jarra/chunk-QGCEKL6G.js": "7a70f2bcbfc74180084f9d4be99005a094271eef",
+    "/jarra/chunk-S7LXIB6A.js": "6fd4dfa8d4efb3c4ad2436465ecb59e5dcf4e656",
+    "/jarra/chunk-TKYIJHZO.js": "502bbec12812aaad935c48d49fc4694c8823e926",
+    "/jarra/chunk-V7VSPFB7.js": "0ed93ffe96c4861e7652dfb1f096e2b5b4de64b2",
+    "/jarra/chunk-YIJSGXRL.js": "35ad78842e71d9fd52e6fd13f8c0a49ee394b0b5",
+    "/jarra/favicon.svg": "4f753e47d230548ea922e3ec16b7857d045ccaa0",
+    "/jarra/index.html": "9c0e67d0c5da9f37bbdf500120ea8d8d001bc04a",
+    "/jarra/main.js": "c13c1d67d755668a3b5c9d328ae63b9a6b2066ed",
+    "/jarra/manifest.webmanifest": "1e26a98122a920cbf9f2bd3a2e7e61c874ce8639",
+    "/jarra/polyfills.js": "f2241e9a25858f895ce299d15f6f22e849e2fd72",
+    "/jarra/styles.css": "b11dcebfeb6bafa8d27d202663eef204a53ea3ae"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}

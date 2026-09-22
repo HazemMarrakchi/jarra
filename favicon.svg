@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="clay" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8814f"/>
+      <stop offset="1" stop-color="#b4552d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#12100d"/>
+  <!-- amphora -->
+  <path d="M32 10c-3.5 0-6 1.8-6 4 0 1.4.8 2.4 2 3.2-3.6 1.6-6 5.4-6 9.8 0 7 4.5 13.5 8 17.5 1 .9 3 .9 4 0 3.5-4 8-10.5 8-17.5 0-4.4-2.4-8.2-6-9.8 1.2-.8 2-1.8 2-3.2 0-2.2-2.5-4-6-4z" fill="url(#clay)"/>
+  <!-- handles -->
+  <path d="M24.5 18.5c-2.8-1.8-6.5-.8-7.5 2.2-.9 2.8.8 5.6 3.6 6.4" fill="none" stroke="#e8814f" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M39.5 18.5c2.8-1.8 6.5-.8 7.5 2.2.9 2.8-.8 5.6-3.6 6.4" fill="none" stroke="#e8814f" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- wheat mark -->
+  <path d="M32 24v12m0-9l-3.2-2.4M32 27l3.2-2.4M32 31l-3.2-2.4M32 31l3.2-2.4" stroke="#f7e8d3" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,1 @@
+var e={hero:"assets/img/hero-comptoir.jpg",vitrine:"assets/img/vitrine-boutique.jpg",argile:"assets/img/jarra-argile.jpg",boulangerie:"assets/img/panier-boulangerie.jpg",primeur:"assets/img/panier-primeur.jpg",traiteur:"assets/img/panier-traiteur.jpg",patisserie:"assets/img/patisseries-fines.jpg",commercant:"assets/img/portrait-commercant.jpg"};export{e as a};
