@@ -110,7 +110,7 @@ import { KIND_ICON } from '../core/ui';
               <label for="dUntil">Fin de créneau</label>
               <input id="dUntil" class="input" type="time" name="draftUntil" [(ngModel)]="draftUntil" />
             </div>
-            @if (store.mode === 'live') {
+            @if (store.mode === 'live' && !isOwner()) {
               <div class="field">
                 <label for="dPin">Code commerçant (PIN)</label>
                 <input id="dPin" class="input" type="password" inputmode="numeric" autocomplete="off" name="draftPin" [(ngModel)]="draftPin" placeholder="Remis à l'onboarding" />
@@ -175,6 +175,79 @@ import { KIND_ICON } from '../core/ui';
 
       <!-- ── Colonne latérale ───────────────────────────────────── -->
       <div class="stack gap-md">
+        <!-- Connexion commerçant par OTP téléphone (mode live uniquement) -->
+        @if (store.mode === 'live') {
+          <div class="card card-pad stack gap-sm">
+            @if (!auth()) {
+              <div class="row between">
+                <h2 class="headline-sm">Connexion commerçant</h2>
+                <span class="ms ms-24" style="color:var(--brand-mint-ink)">lock_open</span>
+              </div>
+              <p class="body-sm muted">
+                Recevez un code par SMS : publication sans PIN et comptoir protégé par votre session.
+              </p>
+              @if (!otpSent()) {
+                <label class="sr" for="phoneIn">Numéro de téléphone</label>
+                <input id="phoneIn" class="input" type="tel" inputmode="tel" name="phoneInput"
+                       placeholder="+216 20 000 000" [(ngModel)]="phoneInput" />
+                <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="requestCode()">
+                  <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'sms' }}</span>
+                  {{ busy() ? 'Envoi…' : 'Recevoir le code' }}
+                </button>
+              } @else {
+                <label class="sr" for="otpIn">Code reçu par SMS</label>
+                <div class="row gap-sm">
+                  <input id="otpIn" class="input code-input" type="text" inputmode="numeric" name="otpInput"
+                         maxlength="6" placeholder="123456" autocomplete="one-time-code" [(ngModel)]="otpInput"
+                         style="flex:1 1 8rem" (keyup.enter)="verifyCode()" />
+                  <button class="btn btn-primary" type="button" [disabled]="otpInput.trim().length < 4 || busy()" (click)="verifyCode()">
+                    <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'check' }}</span>Vérifier
+                  </button>
+                </div>
+                <button class="btn btn-ghost btn-sm" type="button" (click)="otpSent.set(false); authMsg.set(null)">
+                  <span class="ms ms-18">undo</span>Changer de numéro
+                </button>
+              }
+              @if (authMsg(); as msg) {
+                <p class="body-sm" role="status" [style.color]="authOk() ? 'var(--brand-mint-ink)' : 'var(--error)'">{{ msg }}</p>
+              }
+            } @else {
+              <div class="row between wrap gap-sm">
+                <span class="eco-badge"><span class="ms" style="font-size:15px">verified_user</span>{{ auth()!.phone }}</span>
+                <button class="btn btn-ghost btn-sm" type="button" (click)="logout()">
+                  <span class="ms ms-18">logout</span>Sortir
+                </button>
+              </div>
+              @if (isOwner()) {
+                <p class="body-sm" style="color:var(--brand-mint-ink)">
+                  <b>✓ « {{ me()?.name }} » est lié à votre numéro</b> — publication sans PIN,
+                  retraits réservés à votre session.
+                </p>
+              } @else if (auth()!.merchantId) {
+                <p class="body-sm muted">
+                  Votre numéro est lié à un autre commerce — sélectionnez-le dans la liste en haut de page.
+                </p>
+              } @else {
+                <p class="body-sm muted">
+                  Liez « {{ me()?.name }} » à votre numéro : entrez le code PIN actuel une dernière fois.
+                </p>
+                <div class="row gap-sm">
+                  <label class="sr" for="claimPin">PIN actuel</label>
+                  <input id="claimPin" class="input code-input" type="password" maxlength="8" name="claimPin"
+                         placeholder="PIN" autocomplete="off" [(ngModel)]="claimPin"
+                         style="flex:1 1 7rem" (keyup.enter)="claim()" />
+                  <button class="btn btn-primary" type="button" [disabled]="claimPin.trim().length < 4 || busy()" (click)="claim()">
+                    <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'link' }}</span>Lier ce commerce
+                  </button>
+                </div>
+                @if (authMsg(); as msg) {
+                  <p class="body-sm" role="status" [style.color]="authOk() ? 'var(--brand-mint-ink)' : 'var(--error)'">{{ msg }}</p>
+                }
+              }
+            }
+          </div>
+        }
+
         <!-- Encaissement comptoir -->
         <div class="card card-pad stack gap-sm">
           <div class="row between">
@@ -291,6 +364,21 @@ export class MerchantComponent {
   readonly collectMsg = signal<string | null>(null);
   readonly collectOk = signal(false);
   readonly publishMsg = signal<string | null>(null);
+
+  // ── Auth commerçant (OTP téléphone — mode live) ──
+  readonly auth = this.store.merchantAuth;
+  phoneInput = '+216';
+  otpInput = '';
+  claimPin = '';
+  readonly otpSent = signal(false);
+  readonly authMsg = signal<string | null>(null);
+  readonly authOk = signal(false);
+
+  /** Ce commerce est lié au numéro actuellement connecté. */
+  readonly isOwner = computed(() => {
+    const a = this.store.merchantAuth();
+    return a !== null && a.merchantId === this.selectedId();
+  });
 
   // Formulaire de publication express
   draftTitle = 'Panier du soir';
@@ -419,11 +507,11 @@ export class MerchantComponent {
         rescuePrice: Math.round(Number(this.draftRescue) * 1000),
         quantity: Math.max(1, Math.min(20, Math.round(Number(this.draftQty)))),
         pickupUntil: String(this.draftUntil),
-      }, this.draftPin.trim() || undefined);
+      }, this.isOwner() ? undefined : this.draftPin.trim() || undefined);
       this.publishMsg.set(
         basket
           ? `« ${basket.title} » est en ligne : visible sur la carte immédiatement.`
-          : 'Publication impossible : vérifiez les champs (et le code commerçant en mode connecté).',
+          : 'Publication impossible : vérifiez les champs (et le code commerçant, ou connectez-vous par SMS).',
       );
     } finally {
       this.busy.set(false);
@@ -432,5 +520,81 @@ export class MerchantComponent {
 
   clockLabel(): string {
     return formatClock(this.store.clockMin());
+  }
+
+  // ── Auth commerçant (OTP téléphone) ───────────────────────────────
+
+  /** Étape 1 : envoi du code SMS au numéro saisi. */
+  async requestCode(): Promise<void> {
+    const phone = this.normalizedPhone();
+    if (!phone) {
+      this.authOk.set(false);
+      this.authMsg.set('Format international attendu : « +216 » suivi du numéro, sans espaces.');
+      return;
+    }
+    this.busy.set(true);
+    try {
+      const ok = await this.store.requestOtp(phone);
+      this.otpSent.set(ok);
+      this.authOk.set(ok);
+      this.authMsg.set(
+        ok
+          ? `Code envoyé au ${phone} — il expire dans quelques minutes.`
+          : "Envoi impossible : vérifiez le numéro et l'activation du SMS (console Supabase).",
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Étape 2 : vérification du code → session commerçant ouverte. */
+  async verifyCode(): Promise<void> {
+    const code = this.otpInput.trim();
+    const phone = this.normalizedPhone();
+    if (code.length < 4 || !phone || this.busy()) return;
+    this.busy.set(true);
+    try {
+      const auth = await this.store.verifyOtp(phone, code);
+      this.authOk.set(auth !== null);
+      this.authMsg.set(
+        auth
+          ? 'Connecté ! Liez maintenant ce commerce à votre numéro ci-dessous.'
+          : 'Code incorrect ou expiré — demandez-en un nouveau.',
+      );
+      if (auth) this.otpInput = '';
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Liaison une-fois : le PIN actuel lie le commerce au numéro connecté. */
+  async claim(): Promise<void> {
+    if (this.claimPin.trim().length < 4 || this.busy()) return;
+    this.busy.set(true);
+    try {
+      const ok = await this.store.claimMerchant(this.selectedId(), this.claimPin.trim());
+      this.authOk.set(ok);
+      this.authMsg.set(
+        ok
+          ? 'Commerce lié à votre numéro : le PIN n\u2019est plus nécessaire.'
+          : 'PIN incorrect (ou commerce déjà lié à un autre numéro).',
+      );
+      if (ok) this.claimPin = '';
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  async logout(): Promise<void> {
+    await this.store.signOut();
+    this.otpSent.set(false);
+    this.authMsg.set(null);
+    this.authOk.set(false);
+  }
+
+  /** Normalise en E.164 (« +216… », chiffres uniquement). Null si invalide. */
+  private normalizedPhone(): string | null {
+    const p = this.phoneInput.replace(/[\s.\-()]/g, '');
+    return /^\+\d{8,15}$/.test(p) ? p : null;
   }
 }

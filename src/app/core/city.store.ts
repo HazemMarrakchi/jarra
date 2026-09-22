@@ -9,7 +9,7 @@
 import { Injectable, OnDestroy, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { DAY_START_MIN } from './city.engine';
-import { DataProvider, PublishDraft } from './data.provider';
+import { DataProvider, MerchantAuth, PublishDraft } from './data.provider';
 import { DemoProvider } from './demo.provider';
 import { SupabaseProvider } from './supabase.provider';
 import { Basket, ImpactStats, Merchant, Order, WeeklyTrend } from './model';
@@ -52,6 +52,9 @@ export class CityStore implements OnDestroy {
 
   /** Version qui s'incrémente à chaque changement — pour les computed. */
   readonly version = signal(0);
+
+  /** Session commerçant connectée (OTP) — null en démo ou déconnecté. */
+  readonly merchantAuth = signal<MerchantAuth | null>(null);
 
   private timer = 0;
 
@@ -111,6 +114,32 @@ export class CityStore implements OnDestroy {
     return ok;
   }
 
+  // ── Auth commerçant (OTP téléphone — live uniquement) ─────────────
+
+  /** Envoie le code OTP par SMS. Faux en mode démo (pas d'auth). */
+  async requestOtp(phone: string): Promise<boolean> {
+    return (await this.provider.requestOtp?.(phone)) ?? false;
+  }
+
+  /** Vérifie le code reçu par SMS → session commerçant ouverte. */
+  async verifyOtp(phone: string, code: string): Promise<MerchantAuth | null> {
+    const auth = (await this.provider.verifyOtp?.(phone, code)) ?? null;
+    this.applySnapshot();
+    return auth;
+  }
+
+  /** Lie le commerce sélectionné au numéro connecté (une fois, via PIN). */
+  async claimMerchant(merchantId: string, pin: string): Promise<boolean> {
+    const ok = (await this.provider.claimMerchant?.(merchantId, pin)) ?? false;
+    if (ok) this.applySnapshot();
+    return ok;
+  }
+
+  async signOut(): Promise<void> {
+    await this.provider.signOut?.();
+    this.applySnapshot();
+  }
+
   merchant(id: string): Merchant | undefined {
     return this.merchants().find((m) => m.id === id);
   }
@@ -127,6 +156,7 @@ export class CityStore implements OnDestroy {
     this.impact.set(s.impact);
     this.trend.set(s.trend);
     this.clockMin.set(s.clockMin);
+    this.merchantAuth.set(this.provider.auth?.() ?? null);
     this.version.update((v) => v + 1);
   }
 }

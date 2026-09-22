@@ -65,9 +65,35 @@ automatiquement en mode live.
 update merchants set pin_hash = crypt('NOUVEAU_PIN', gen_salt('bf')) where id = 'm01';
 ```
 
+## Auth commerçant par OTP téléphone (étape 2)
+
+La migration [`migration-auth.sql`](./migration-auth.sql) ajoute :
+
+- `merchants.owner_id` — lie un commerce à un utilisateur Supabase Auth
+- `claim_merchant(id, pin)` — liaison une-fois : session OTP + PIN actuel → `owner_id`
+- `publish_basket` durcie : commerce lié → **session du propriétaire exigée** (le PIN est ignoré) ; non lié → PIN historique accepté (transition douce du pilote)
+- `collect_order` durcie : commerce lié → le code de retrait ne suffit plus, **session du propriétaire exigée** (fin du brute-force sur 4 caractères)
+
+### Mise en route
+
+1. **SQL Editor** → coller `migration-auth.sql` → **Run**
+2. **Authentication → Sign In / Providers → Phone** → activer
+3. Pour le pilote, pas besoin de passerelle SMS payante : dans les réglages
+   Phone, ajouter des **numéros de test** (ex. `+21620000000` → code fixe
+   `123456`). Ces numéros ne reçoivent aucun SMS : le code est fixe.
+4. Brancher ensuite un vrai fournisseur SMS (Twilio…) pour la production.
+
+### Parcours commerçant (`/commercant`)
+
+1. Saisir son numéro au format international (`+216…`) → **Recevoir le code**
+2. Saisir le code SMS → session commerçant ouverte (persistée, restauration auto)
+3. **Lier ce commerce** avec le PIN actuel (une dernière fois) → le commerce
+   devient « le sien » : publication sans PIN, retraits protégés par session
+
 ## Étapes suivantes (roadmap)
 
-- [ ] Auth commerçant par téléphone OTP (colonne `merchants.owner_id` déjà prévue)
-- [ ] Durcir `collect_order` : restreindre au commerçant propriétaire une fois l'auth en place
+- [x] Auth commerçant par téléphone OTP (colonne `merchants.owner_id`)
+- [x] `collect_order` durci : propriétaire connecté exigé pour les commerces liés
+- [ ] Changer les PIN par défaut (`1234`) puis lier chaque commerce à son numéro
 - [ ] Paiement intégré (D17 / Flouci)
 - [ ] Notifications push (Web Push API)

@@ -10,7 +10,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import { DataProvider, ProviderSnapshot, PublishDraft } from './data.provider';
+import { DataProvider, MerchantAuth, ProviderSnapshot, PublishDraft } from './data.provider';
 import {
   Basket, BasketStatus, ImpactStats, Merchant, MerchantKind, Order, OrderStatus, WeeklyTrend,
 } from './model';
@@ -26,6 +26,7 @@ const EMPTY_IMPACT: ImpactStats = {
 interface MerchantRow {
   id: string; name: string; kind: string; lat: number; lon: number;
   area: string; verified: boolean; rating: number; rating_count: number;
+  owner_id: string | null;
 }
 interface BasketRow {
   id: string; merchant_id: string; title: string; description: string;
@@ -65,6 +66,10 @@ export class SupabaseProvider implements DataProvider {
   /** Commandes passées depuis cet appareil → affichées « Vous ». */
   private readonly ownOrders = new Set<string>(SupabaseProvider.loadOwnOrders());
 
+  /** Session commerçant (Supabase Auth, OTP téléphone). */
+  private userId: string | null = null;
+  private userPhone: string | null = null;
+
   constructor(
     private readonly url: string,
     private readonly anonKey: string,
@@ -75,6 +80,14 @@ export class SupabaseProvider implements DataProvider {
       // Import dynamique : chunk chargé uniquement en mode live.
       const { createClient } = await import('@supabase/supabase-js');
       this.client = createClient(this.url, this.anonKey);
+      // Restaure une éventuelle session commerçant (localStorage) et
+      // suit ses changements (connexion/déconnexion, autre onglet…).
+      const { data } = await this.client.auth.getSession();
+      this.setSessionUser(data.session?.user?.id ?? null, data.session?.user?.phone ?? null);
+      this.client.auth.onAuthStateChange((_event, session) => {
+        this.setSessionUser(session?.user?.id ?? null, session?.user?.phone ?? null);
+        onChange();
+      });
       await this.reload();
       onChange();
       this.channel = this.client
@@ -152,6 +165,51 @@ export class SupabaseProvider implements DataProvider {
   destroy(): void {
     if (this.client && this.channel) void this.client.removeChannel(this.channel);
     this.channel = null;
+  }
+
+  // ── Auth commerçant (OTP téléphone — étape 2) ─────────────────────
+
+  auth(): MerchantAuth | null {
+    if (!this.userId || !this.userPhone) return null;
+    const owned = this.merchantRows.find((m) => m.owner_id === this.userId);
+    return { phone: this.userPhone, merchantId: owned?.id ?? null };
+  }
+
+  async requestOtp(phone: string): Promise<boolean> {
+    if (!this.client) return false;
+    const { error } = await this.client.auth.signInWithOtp({ phone });
+    return !error;
+  }
+
+  async verifyOtp(phone: string, code: string): Promise<MerchantAuth | null> {
+    if (!this.client) return null;
+    const { data, error } = await this.client.auth.verifyOtp({
+      phone, token: code, type: 'sms',
+    });
+    if (error || !data.user) return null;
+    this.setSessionUser(data.user.id, data.user.phone ?? null);
+    return this.auth();
+  }
+
+  async claimMerchant(merchantId: string, pin: string): Promise<boolean> {
+    if (!this.userId) return false;
+    const ok = await this.rpc<boolean>('claim_merchant', {
+      p_merchant_id: merchantId,
+      p_pin: pin,
+    });
+    if (ok === true) await this.reloadSafe(); // owner_id → auth().merchantId
+    return ok === true;
+  }
+
+  async signOut(): Promise<void> {
+    await this.client?.auth.signOut();
+    this.setSessionUser(null, null);
+  }
+
+  /** Supabase renvoie le téléphone sans « + » — on normalise en E.164. */
+  private setSessionUser(id: string | null, phone: string | null): void {
+    this.userId = id;
+    this.userPhone = phone ? (phone.startsWith('+') ? phone : `+${phone}`) : null;
   }
 
   // ── interne ──────────────────────────────────────────────────────

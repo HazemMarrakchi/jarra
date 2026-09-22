@@ -92,4 +92,17 @@ describe('CityStore (façade)', () => {
     expect(store.baskets().find((b) => b.id === basket.id)!.quantityLeft)
       .toBe(before - 1);
   });
+
+  it('dégrade proprement l’auth commerçant en mode démo (jamais de réseau)', async () => {
+    TestBed.configureTestingModule({});
+    const store = TestBed.inject(CityStore);
+    // Le DemoProvider n’implémente pas l’auth (optionnelle dans le contrat) :
+    // la façade doit répondre « non » sans appel réseau ni exception.
+    expect(store.merchantAuth()).toBeNull();
+    expect(await store.requestOtp('+21620000000')).toBeFalse();
+    expect(await store.verifyOtp('+21620000000', '123456')).toBeNull();
+    expect(await store.claimMerchant('m01', '1234')).toBeFalse();
+    await store.signOut(); // no-op en démo
+    expect(store.merchantAuth()).toBeNull();
+  });
 });
