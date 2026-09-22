@@ -1,15 +1,9 @@
-﻿// ═══════════════════════════════════════════════════════════════════
-// JARRA — Carte réelle (MapLibre GL + tuiles CartoDB Voyager, gratuites)
-// Vraie carte de Gabès : zoom/pinch tactile natif, marqueurs DOM custom.
-// Fallback élégant si WebGL est indisponible (tests, vieux navigateurs).
-// ═══════════════════════════════════════════════════════════════════
-
 import {
-  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges,
+  AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges,
   OnDestroy, Output, ViewChild,
 } from '@angular/core';
 import * as maplibregl from 'maplibre-gl';
-import { KIND_ICON, Merchant, MerchantKind } from './model';
+import { Merchant, MerchantKind } from './model';
 
 /** Marqueur affiché sur la carte : commerçant + son stock live. */
 export interface MapPin {
@@ -22,57 +16,67 @@ export interface MapPin {
 const GABES_CENTER: [number, number] = [10.0982, 33.8815];
 /** Tuiles vectorielles gratuites et claires (pas de clé API). */
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+/** Vert forêt de la marque : tous les marqueurs actifs. */
+const PIN_FOREST = '#1b4332';
 
 @Component({
   selector: 'jr-city-map',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="map-frame">
       <div #container class="map"></div>
 
       @if (failed) {
         <div class="map-fallback">
+          <span class="ms ms-40">map</span>
           <strong>La carte interactive n'est pas disponible ici.</strong>
-          <span>Votre navigateur ou cet environnement ne supporte pas WebGL — la liste des paniers ci-dessous reste pleinement fonctionnelle.</span>
+          <span class="body-sm">
+            Votre navigateur ou cet environnement ne supporte pas WebGL — la liste des paniers reste pleinement
+            fonctionnelle.
+          </span>
         </div>
       }
 
       <div class="map-legend">
-        @for (k of kinds; track k) {
-          <span><i class="dot" [style.background]="colorOf(k)"></i>{{ icon(k) }} {{ k }}</span>
-        }
+        <span><i class="pin-live"></i>Commerce avec invendus</span>
+        <span><i class="pin-idle"></i>Aucun invendu</span>
+        <span class="grow"></span>
+        <span class="label-sm muted">Zoom {{ zoomLabel }}</span>
       </div>
     </div>
   `,
   styles: [`
     .map-frame { position: relative; }
     .map {
-      width: 100%; height: 460px;
+      width: 100%; height: 30rem;
       border-radius: var(--r-lg);
       overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-2);
+      border: 1px solid var(--hairline);
+      background: var(--surface-container);
     }
     .map-fallback {
       position: absolute; inset: 0; z-index: 2;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem;
-      text-align: center; padding: 1.5rem;
-      background: var(--surface-2); border-radius: var(--r-lg);
-      color: var(--muted); font-size: .88rem;
+      display: grid; gap: var(--space-sm); justify-items: center; align-content: center;
+      text-align: center; padding: var(--space-lg);
+      background: var(--surface-container-low); border-radius: var(--r-lg);
+      color: var(--on-surface-variant);
     }
+    .map-fallback .ms { color: var(--primary-container); }
     .map-legend {
-      display: flex; flex-wrap: wrap; gap: .5rem 1.1rem;
-      margin-top: .7rem; padding: 0 .3rem;
-      font-size: .74rem; color: var(--muted);
+      display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-sm) var(--space-md);
+      margin-top: var(--space-sm); font-size: 0.75rem; color: var(--on-surface-variant);
     }
-    .map-legend span { display: inline-flex; align-items: center; gap: .35rem; }
-    .map-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-
-    @media (max-width: 720px) {
-      .map { height: 52vh; height: 52svh; min-height: 320px; }
+    .map-legend span { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+    .map-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .map-legend .pin-live { background: var(--primary-container); box-shadow: 0 0 0 2px rgba(82, 183, 138, .5); }
+    .map-legend .pin-idle { background: #8fa39a; }
+    .map-legend .grow { flex: 1; }
+    @media (max-width: 1023px) {
+      .map { height: 24rem; }
     }
-    @media (max-width: 720px) and (orientation: landscape) {
-      .map { height: 74vh; }
+    @media (max-width: 767px) {
+      .map { height: 60svh; min-height: 20rem; }
     }
   `],
 })
@@ -86,6 +90,7 @@ export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('container') container!: ElementRef<HTMLDivElement>;
 
   failed = false;
+  zoomLabel = '12';
 
   private map?: maplibregl.Map;
   private markers: maplibregl.Marker[] = [];
@@ -93,6 +98,11 @@ export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   readonly kinds: MerchantKind[] = ['bakery', 'patisserie', 'restaurant', 'grocery'];
 
   ngAfterViewInit(): void {
+    // Sans WebGL (tests, vieux navigateurs) on affiche le repli : la liste reste utilisable.
+    if (!this.webglAvailable()) {
+      this.failed = true;
+      return;
+    }
     try {
       this.map = new maplibregl.Map({
         container: this.container.nativeElement,
@@ -102,14 +112,10 @@ export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         attributionControl: false,
       });
       this.map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
-      this.map.addControl(
-        new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
-        'bottom-right',
-      );
-      // Clic sur le fond = désélection
+      this.map.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), 'bottom-right');
       this.map.on('click', () => this.background.emit());
-      // Erreur de chargement des tuiles (offline) → fallback
       this.map.on('error', () => { /* silencieux : la liste reste utilisable */ });
+      this.map.on('zoom', () => { this.zoomLabel = (this.map?.getZoom() ?? 12).toFixed(0); });
       this.renderMarkers();
     } catch {
       this.failed = true;
@@ -125,14 +131,18 @@ export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.map?.remove();
   }
 
-  colorOf(kind: MerchantKind): string {
-    return (
-      { bakery: '#d96f36', patisserie: '#c98f2e', restaurant: '#5f8746', grocery: '#3f8f77' } as Record<MerchantKind, string>
-    )[kind];
+  /** WebGL est-il utilisable dans cet environnement ? */
+  private webglAvailable(): boolean {
+    try {
+      const canvas = document.createElement('canvas');
+      return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+    } catch {
+      return false;
+    }
   }
 
-  icon(kind: MerchantKind): string {
-    return KIND_ICON[kind];
+  colorOf(_kind: MerchantKind): string {
+    return PIN_FOREST;
   }
 
   dimmed(kind: MerchantKind): boolean {
@@ -149,7 +159,7 @@ export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       const el = document.createElement('button');
       el.type = 'button';
       el.className = this.pinClass(pin);
-      el.style.setProperty('--pin-color', this.colorOf(pin.merchant.kind));
+      el.style.setProperty('--pin-color', PIN_FOREST);
       el.setAttribute('aria-label', `${pin.merchant.name} — ${pin.liveCount} paniers`);
       if (pin.liveCount > 0) {
         el.innerHTML = `<span class="pin-n">${pin.liveCount}</span>`;
@@ -159,7 +169,7 @@ export class CityMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         this.select.emit(pin);
       });
 
-      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 2] })
+      const marker = new maplibregl.Marker({ element: el, anchor: 'center', offset: [0, 0] })
         .setLngLat([pin.merchant.lon, pin.merchant.lat])
         .addTo(this.map);
       this.markers.push(marker);

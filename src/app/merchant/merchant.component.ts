@@ -1,238 +1,280 @@
-﻿import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { CityStore } from '../core/city.store';
-import { KIND_ICON, formatClock, formatTnd } from '../core/model';
-import { predictWaste, demoHistoryFor, PredictionInput } from '../core/predictor';
+import { KIND_LABEL, formatClock, formatTnd } from '../core/model';
+import { demoHistoryFor, predictWaste, PredictionInput } from '../core/predictor';
+import { KIND_ICON } from '../core/ui';
 
 @Component({
   selector: 'jr-merchant',
   standalone: true,
-  imports: [FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [FormsModule, RouterLink],
   template: `
-    <div class="shell">
-      <header class="head rise">
-        <span class="eyebrow">🏪 Espace commerçant</span>
-        <h1>Publiez vos invendus en 30 secondes</h1>
-        <p class="sub">
-          Pas de contrat, pas de commission la première semaine.
-          Vos invendus du soir deviennent un revenu au lieu d'une perte.
-        </p>
-      </header>
-
-      <div class="dash">
-        <div class="col">
-          <section class="card panel rise">
-            <h2>Votre commerce</h2>
+    <!-- ── En-tête commerçant ───────────────────────────────────── -->
+    <section class="page-head">
+      <div class="shell-lg">
+        <div class="row between wrap gap-md" style="align-items:flex-end">
+          <div>
+            <span class="eco-badge"><span class="ms" style="font-size:15px">store</span>Statut du comptoir : ouvert</span>
+            <h1 style="margin-top:var(--space-sm)">{{ me()?.name }}</h1>
+            <p class="body-lg muted" style="margin-top:var(--space-sm)">
+              {{ kindLabel(me()?.kind ?? 'bakery') }} · {{ me()?.area }}, Gabès — il est
+              <span class="mono-num" style="color:var(--primary-container)">{{ clockLabel() }}</span>.
+            </p>
+          </div>
+          <div class="row gap-sm wrap">
             <div class="field">
-              <label for="shop">Sélectionnez votre commerce (démo)</label>
-              <select id="shop" name="shop" [ngModel]="selectedId()" (ngModelChange)="selectShop($event)">
+              <label for="shopSel">Commerce</label>
+              <select id="shopSel" class="select" [value]="selectedId()" (change)="selectShop($any($event.target).value)">
                 @for (m of store.merchants(); track m.id) {
-                  <option [value]="m.id">{{ icon(m.kind) }} {{ m.name }} — {{ m.area }}</option>
+                  <option [value]="m.id">{{ m.name }}</option>
                 }
               </select>
             </div>
-            @if (me(); as m) {
-              <div class="shop-card">
-                <span class="shop-ico">{{ icon(m.kind) }}</span>
-                <div>
-                  <strong>{{ m.name }}</strong>
-                  <span class="shop-meta">{{ m.area }} · ⭐ {{ m.rating }} ({{ m.ratingCount }} avis)</span>
-                </div>
-                @if (m.verified) { <span class="v-badge">✓ Vérifié</span> }
-              </div>
-            }
-          </section>
-
-          <section class="card panel rise" style="animation-delay:.06s">
-            <h2>🤖 Prédiction des invendus</h2>
-            <p class="panel-sub">Estimation pour demain, à partir de votre historique de service.</p>
-            <div class="predict-box">
-              <div class="p-main">
-                <span class="p-num">{{ prediction().expected }}</span>
-                <span class="p-unit">invendus probables</span>
-              </div>
-              <div class="p-details">
-                <span>Intervalle : <strong>{{ prediction().low }}–{{ prediction().high }}</strong></span>
-                <span>Confiance : <strong>{{ prediction().confidence }}%</strong></span>
-                <span>Jour : <strong>{{ prediction().weekday.toUpperCase() }}</strong></span>
-              </div>
-              <div class="p-bar"><i [style.width.%]="prediction().confidence"></i></div>
-              <p class="p-tip">💡 {{ prediction().tip }}</p>
-            </div>
-          </section>
-
-          <section class="card panel rise" style="animation-delay:.12s">
-            <h2>🎫 Valider un retrait</h2>
-            <p class="panel-sub">Saisissez le code à 4 caractères présenté par le client.</p>
-            <form class="collect-form" (ngSubmit)="collect()">
-              <input name="code" [(ngModel)]="codeInput" placeholder="A7K2" maxlength="4"
-                class="code-input" aria-label="Code de retrait" />
-              <button class="btn btn-primary" type="submit" [disabled]="codeInput.trim().length < 4">Valider</button>
-            </form>
-            @if (collectMsg(); as msg) {
-              <p class="collect-msg" [class.ok]="collectOk()">{{ msg }}</p>
-            }
-          </section>
+            <a class="btn btn-primary" routerLink="/publier"><span class="ms ms-18">bolt</span>Publication express</a>
+          </div>
         </div>
-        <div class="col">
-          <section class="stats card panel rise">
-            <h2>Votre performance</h2>
-            <div class="stat-grid">
-              <div class="s-item"><strong>{{ stats().live }}</strong><span>paniers en ligne</span></div>
-              <div class="s-item"><strong>{{ stats().reserved }}</strong><span>réservations en cours</span></div>
-              <div class="s-item"><strong>{{ stats().collected }}</strong><span>repas sauvés</span></div>
-              <div class="s-item"><strong>{{ stats().revenue }}</strong><span>TND récupérés</span></div>
-              <div class="s-item"><strong>{{ stats().rescueRate }}%</strong><span>taux de sauvetage</span></div>
-              <div class="s-item"><strong>{{ stats().co2 }}<small>kg</small></strong><span>CO₂ évités</span></div>
+      </div>
+    </section>
+
+    <div class="shell-lg dash">
+      <!-- ── Colonne principale ─────────────────────────────────── -->
+      <div class="stack gap-lg">
+        <!-- Jarra Copilot Intelligence -->
+        <div class="ai-banner">
+          <span class="ai-ico"><span class="ms ms-24">psychology</span></span>
+          <div>
+            <div class="row between wrap gap-sm">
+              <b class="headline-sm">Jarra Copilot Intelligence</b>
+              <span class="eco-badge"><span class="ms" style="font-size:14px">verified</span>Pilote automatique activé</span>
             </div>
-          </section>
-
-          <section class="card panel rise" style="animation-delay:.08s">
-            <h2>📦 Publication express</h2>
-            <p class="panel-sub">Choisissez un modèle, ajustez, publiez — c'est en ligne instantanément.</p>
-            <form class="publish-form" (ngSubmit)="publish()">
-              <div class="field">
-                <label for="title">Titre du panier</label>
-                <input id="title" name="title" [(ngModel)]="draftTitle" placeholder="Panier du soir" />
-              </div>
-              <div class="row-2">
-                <div class="field">
-                  <label for="orig">Prix d'origine (TND)</label>
-                  <input id="orig" name="orig" type="number" step="0.5" min="1" [(ngModel)]="draftOriginal" />
-                </div>
-                <div class="field">
-                  <label for="rescue">Prix Jarra (TND)</label>
-                  <input id="rescue" name="rescue" type="number" step="0.5" min="0.5" [(ngModel)]="draftRescue" />
-                </div>
-              </div>
-              <div class="row-2">
-                <div class="field">
-                  <label for="qty">Quantité</label>
-                  <input id="qty" name="qty" type="number" min="1" max="20" [(ngModel)]="draftQty" />
-                </div>
-                <div class="field">
-                  <label for="until">Retrait jusqu'à</label>
-                  <input id="until" name="until" type="text" [(ngModel)]="draftUntil" placeholder="21:30" />
-                </div>
-              </div>
-              <button class="btn btn-primary publish-btn" type="submit">🚀 Publier maintenant</button>
-            </form>
+            <p class="body-md" style="margin-top:var(--space-sm)">
+              Surplus anticipé :
+              <b class="mono-num">{{ prediction().expected }} unités invendues</b> au prochain service, avec une
+              confiance de {{ prediction().confidence }} %.
+            </p>
+            <div class="prob">
+              <span class="label-sm" style="color:var(--on-secondary-container)">Fourchette</span>
+              <span class="bar"><i [style.width.%]="prediction().confidence"></i></span>
+              <span class="pc">{{ prediction().low }} – {{ prediction().high }}</span>
+            </div>
+            <div class="copilot-actions">
+              <button class="btn btn-primary btn-sm" type="button" (click)="publish()">
+                <span class="ms ms-18">rocket_launch</span>Programmer &amp; publier les paniers en 1 clic
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="publishMsg.set('Seuils de publication modifiés pour ce service.')">
+                <span class="ms ms-18">tune</span>Modifier les seuils
+              </button>
+            </div>
             @if (publishMsg(); as msg) {
-              <p class="collect-msg ok">{{ msg }}</p>
+              <p class="body-sm" role="status" style="color:var(--brand-mint-ink);margin-top:var(--space-sm)">{{ msg }}</p>
             }
-          </section>
+            <div class="elasticity">
+              <div>
+                <p class="label-sm muted" style="text-transform:uppercase">Élasticité vente / tarif</p>
+                <p class="body-sm muted">
+                  À {{ predictedPrice() }} DT, votre panier se vend en moyenne en 14 minutes dans le quartier.
+                </p>
+              </div>
+              <span class="price"><span class="price-now">{{ predictedPrice() }}</span><span class="price-cur">DT</span></span>
+            </div>
+          </div>
+        </div>
 
-          <section class="card panel rise" style="animation-delay:.14s">
-            <h2>Vos paniers</h2>
-            <ul class="my-baskets">
-              @for (b of myBaskets(); track b.id) {
-                <li [class.done]="b.status !== 'live'">
-                  <span class="mb-title">{{ b.title }}</span>
-                  <span class="mb-meta">
-                    {{ b.quantityLeft }}/{{ b.quantityTotal }} · {{ formatPrice(b.rescuePrice) }} TND ·
-                    {{ statusLabel(b) }}
-                  </span>
-                </li>
-              } @empty {
-                <li class="mb-empty">Aucun panier publié pour l'instant.</li>
-              }
-            </ul>
-          </section>
+        <!-- Publication express inline -->
+        <div class="card card-pad">
+          <div class="row between wrap gap-sm" style="margin-bottom:var(--space-md)">
+            <h2 class="headline-sm">Publication express en 10 secondes</h2>
+            <a class="btn btn-ghost btn-sm" routerLink="/publier">Ouvrir le flux complet<span class="ms ms-18">arrow_forward</span></a>
+          </div>
+          <div class="pub-inline">
+            <div class="field">
+              <label for="dTitle">Titre du panier</label>
+              <input id="dTitle" class="input" name="draftTitle" [(ngModel)]="draftTitle" />
+            </div>
+            <div class="field">
+              <label for="dQty">Quantité</label>
+              <input id="dQty" class="input" type="number" min="1" max="20" name="draftQty" [(ngModel)]="draftQty" />
+            </div>
+            <div class="field">
+              <label for="dOrig">Valeur vitrine (DT)</label>
+              <input id="dOrig" class="input" type="number" step="0.5" name="draftOriginal" [(ngModel)]="draftOriginal" />
+            </div>
+            <div class="field">
+              <label for="dRescue">Prix Jarra (DT)</label>
+              <input id="dRescue" class="input" type="number" step="0.5" name="draftRescue" [(ngModel)]="draftRescue" />
+            </div>
+            <div class="field">
+              <label for="dUntil">Fin de créneau</label>
+              <input id="dUntil" class="input" type="time" name="draftUntil" [(ngModel)]="draftUntil" />
+            </div>
+            <div class="field">
+              <label>Remise</label>
+              <div class="card-flat" style="padding:.7rem var(--space-md);display:flex;align-items:center;gap:var(--space-sm)">
+                <span class="discount-chip">-{{ discountPct() }}%</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-urgent" type="button" style="margin-top:var(--space-md)" (click)="publish()">
+            <span class="ms ms-18">bolt</span>Mettre en ligne maintenant (10s)
+          </button>
+        </div>
+
+        <!-- Paniers du jour -->
+        <div class="card">
+          <div class="card-pad" style="padding-bottom:0">
+            <h2 class="headline-sm">Paniers du jour actifs</h2>
+            <p class="body-sm muted" style="margin-top:4px">Statut calculé à la fin du créneau de retrait.</p>
+          </div>
+          <div class="card-pad">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Panier</th>
+                    <th scope="col">Créneau</th>
+                    <th scope="col" class="right">Restant</th>
+                    <th scope="col" class="right">Prix</th>
+                    <th scope="col" class="right">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (b of myBaskets(); track b.id) {
+                    <tr>
+                      <td>{{ b.title }}</td>
+                      <td class="mono-num">{{ windowOf(b) }}</td>
+                      <td class="right mono-num">{{ b.quantityLeft }} / {{ b.quantityTotal }}</td>
+                      <td class="right mono-num">{{ formatPrice(b.rescuePrice) }} DT</td>
+                      <td class="right">
+                        <span
+                          class="pill"
+                          [class.pill-forest]="b.status === 'soldout'"
+                          [class.pill-mint]="b.status === 'live'"
+                          [class.pill-danger]="b.status === 'expired'"
+                        >{{ statusLabel(b) }}</span>
+                      </td>
+                    </tr>
+                  }
+                  @if (myBaskets().length === 0) {
+                    <tr><td colspan="5" class="body-sm muted" style="padding-top:var(--space-md)">Aucun panier publié pour ce commerce.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Colonne latérale ───────────────────────────────────── -->
+      <div class="stack gap-md">
+        <!-- Encaissement comptoir -->
+        <div class="card card-pad stack gap-sm">
+          <div class="row between">
+            <h2 class="headline-sm">Encaissement au comptoir</h2>
+            <span class="ms ms-24" style="color:var(--brand-mint-ink)">point_of_sale</span>
+          </div>
+          <p class="body-sm muted">
+            Saisissez le code à 4 caractères présenté par le client. C'est cette validation qui compte un repas sauvé.
+          </p>
+          <div class="row gap-sm wrap" style="margin-top:var(--space-sm)">
+            <label class="sr" for="collectCode">Code de retrait</label>
+            <input
+              id="collectCode"
+              class="input code-input"
+              name="codeInput"
+              [(ngModel)]="codeInput"
+              placeholder="4X9K"
+              maxlength="6"
+              autocomplete="off"
+              style="flex:1 1 9rem"
+              (keyup.enter)="collect()"
+            />
+            <button class="btn btn-primary" type="button" [disabled]="codeInput.trim().length < 4" (click)="collect()">
+              <span class="ms ms-18">check</span>Valider retrait
+            </button>
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" (click)="collectMsg.set('Scannez le QR code du client avec la caméra du comptoir.')">
+            <span class="ms ms-18">qr_code_scanner</span>Scanner le QR client
+          </button>
+          @if (collectMsg(); as msg) {
+            <p class="body-sm" role="status" [style.color]="collectOk() ? 'var(--brand-mint-ink)' : 'var(--error)'">{{ msg }}</p>
+          }
+        </div>
+
+        <!-- Bilan du mois -->
+        <div class="card card-pad stack gap-sm">
+          <h2 class="headline-sm">Bilan du mois en cours</h2>
+          <div class="kpi-grid">
+            <div class="kpi">
+              <span class="mono-num">{{ stats().collected }}</span>
+              <span class="label-sm muted">Retraits validés</span>
+            </div>
+            <div class="kpi">
+              <span class="mono-num">{{ stats().rescueRate }} %</span>
+              <span class="label-sm muted">Taux de sauvetage</span>
+            </div>
+            <div class="kpi">
+              <span class="mono-num">{{ stats().revenue }}</span>
+              <span class="label-sm muted">Dinars récupérés</span>
+            </div>
+            <div class="kpi">
+              <span class="mono-num">{{ stats().co2 }} kg</span>
+              <span class="label-sm muted">CO₂ évité</span>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" (click)="publishMsg.set('Attestation RSE générée pour le mois en cours.')">
+            <span class="ms ms-18">download</span>Télécharger l'attestation RSE
+          </button>
+        </div>
+
+        <!-- Vitrine publique -->
+        <div class="card card-pad stack gap-sm">
+          <h2 class="headline-sm">Ma vitrine publique</h2>
+          <div class="row gap-sm">
+            <span class="ai-ico"><span class="ms ms-24">{{ icon(me()?.kind ?? 'bakery') }}</span></span>
+            <div class="grow">
+              <b class="label-lg">{{ me()?.name }}</b>
+              <p class="body-sm muted">{{ kindLabel(me()?.kind ?? 'bakery') }} · {{ me()?.area }}</p>
+            </div>
+          </div>
+          <div class="row gap-sm wrap">
+            @if (me()?.verified) {
+              <span class="eco-badge"><span class="ms" style="font-size:14px">verified_user</span>Vérifié</span>
+            }
+            <span class="eco-badge"><span class="ms ms-fill" style="font-size:14px">star</span>{{ me()?.rating }} / 5 · {{ me()?.ratingCount }}</span>
+          </div>
+          <a class="btn btn-ghost btn-sm" [routerLink]="['/boutique', selectedId()]">
+            <span class="ms ms-18">visibility</span>Voir ma fiche publique
+          </a>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .head { padding: 2rem 0 1.4rem; }
-    .eyebrow {
-      display: inline-block; font-size: 0.72rem; font-weight: 600;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--clay-strong); background: var(--clay-ghost);
-      border: 1px solid rgba(232, 129, 79, 0.3);
-      padding: 0.35rem 0.85rem; border-radius: 999px; margin-bottom: 1rem;
-    }
-    .head h1 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
-    .head .sub { color: var(--muted); font-weight: 300; max-width: 40rem; margin: 0.5rem 0 0; }
+    .page-head { background: var(--surface-container-low); padding: var(--space-xl) 0; }
+    .field { min-width: 12rem; }
+    .dash { display: grid; gap: var(--space-lg); padding: var(--space-xl) 0; align-items: start; }
+    @media (min-width: 1024px) { .dash { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); } }
+    .dash > div { min-width: 0; }
 
-    .dash { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: start; }
-    .col { display: flex; flex-direction: column; gap: 1.2rem; }
-
-    .panel { padding: 1.4rem; }
-    .panel h2 { font-size: 1.1rem; }
-    .panel-sub { color: var(--muted); font-size: 0.84rem; font-weight: 300; margin: 0.35rem 0 1.1rem; }
-
-    .shop-card {
-      display: flex; align-items: center; gap: 0.8rem;
-      margin-top: 1rem; padding: 0.9rem 1rem; border-radius: var(--r-md);
-      background: var(--bg-raised); border: 1px solid var(--border-soft);
-    }
-    .shop-ico { font-size: 1.6rem; }
-    .shop-card strong { display: block; font-size: 0.96rem; }
-    .shop-meta { font-size: 0.78rem; color: var(--muted); }
-    .v-badge {
-      margin-left: auto; font-size: 0.7rem; font-weight: 700;
-      color: var(--olive); background: var(--olive-ghost);
-      border: 1px solid rgba(76, 122, 56, 0.35);
-      padding: 0.25rem 0.6rem; border-radius: 999px; white-space: nowrap;
+    .copilot-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-md); }
+    .elasticity {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+      margin-top: var(--space-md); padding-top: var(--space-md);
+      border-top: 1px solid rgba(45, 106, 79, .2);
     }
 
-    /* prédiction */
-    .predict-box { display: grid; gap: 0.8rem; }
-    .p-main { display: flex; align-items: baseline; gap: 0.5rem; }
-    .p-num { font-family: var(--font-display); font-size: 2.6rem; font-weight: 700; color: var(--clay-strong); line-height: 1; }
-    .p-unit { color: var(--muted); font-size: 0.86rem; }
-    .p-details { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-size: 0.8rem; color: var(--muted); }
-    .p-details strong { color: var(--sand-dim); }
-    .p-bar { height: 6px; border-radius: 3px; background: var(--border-soft); overflow: hidden; }
-    .p-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--olive-deep), var(--olive)); transition: width 0.7s var(--ease-out); }
-    .p-tip { font-size: 0.8rem; color: var(--sand-dim); margin: 0; padding: 0.7rem 0.9rem; border-radius: var(--r-sm); background: var(--border-soft); }
+    .pub-inline { display: grid; gap: var(--space-md); }
+    @media (min-width: 640px) { .pub-inline { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1280px) { .pub-inline { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    /* validation */
-    .collect-form { display: flex; gap: 0.6rem; }
-    .code-input {
-      flex: 1; text-align: center; text-transform: uppercase; letter-spacing: 0.3em;
-      font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700;
-      padding: 0.7rem; border-radius: var(--r-sm);
-      background: var(--bg-raised); color: var(--sand); border: 1px solid var(--border);
-    }
-    .code-input:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px var(--clay-ghost); }
-    .collect-msg { margin: 0.8rem 0 0; font-size: 0.85rem; color: var(--danger); font-weight: 600; }
-    .collect-msg.ok { color: var(--olive); }
+    .code-input { text-align: center; text-transform: uppercase; letter-spacing: .3em; font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
 
-    /* stats */
-    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-top: 0.6rem; }
-    .s-item {
-      display: flex; flex-direction: column; gap: 2px; padding: 0.8rem 0.9rem;
-      border-radius: var(--r-sm); background: var(--border-soft);
-    }
-    .s-item strong { font-family: var(--font-display); font-size: 1.4rem; color: var(--sand); font-variant-numeric: tabular-nums; }
-    .s-item strong small { font-size: 0.7rem; color: var(--muted); margin-left: 2px; }
-    .s-item span { font-size: 0.72rem; color: var(--faint); }
-
-    /* publication */
-    .publish-form { display: grid; gap: 0.9rem; }
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
-    .publish-btn { width: 100%; }
-
-    /* mes paniers */
-    .my-baskets { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; max-height: 240px; overflow-y: auto; }
-    .my-baskets li {
-      display: flex; flex-direction: column; gap: 2px; padding: 0.65rem 0.85rem;
-      border-radius: var(--r-sm); background: var(--border-soft);
-      border-left: 3px solid var(--clay);
-    }
-    .my-baskets li.done { border-left-color: var(--faint); opacity: 0.65; }
-    .mb-title { font-size: 0.88rem; font-weight: 600; }
-    .mb-meta { font-size: 0.75rem; color: var(--muted); }
-    .mb-empty { color: var(--faint); font-style: italic; background: none; border-left: none; }
-
-    @media (max-width: 900px) {
-      .dash { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 520px) {
-      .row-2 { grid-template-columns: 1fr; }
-      .stat-grid { grid-template-columns: 1fr 1fr; }
-    }
+    .kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
+    .kpi { background: var(--surface-container-low); border-radius: var(--r-md); padding: var(--space-sm) var(--space-md); display: grid; gap: 2px; }
+    .kpi .mono-num { font-size: 1.25rem; }
   `],
 })
 export class MerchantComponent {
@@ -264,7 +306,6 @@ export class MerchantComponent {
   readonly prediction = computed(() => {
     const m = this.me();
     const history = demoHistoryFor(m?.kind ?? 'bakery', this.selectedId().length);
-    // Jour visé : le lendemain de la journée simulée (déterministe).
     const input: PredictionInput = { history, weekday: (this.store.clockMin() + 1) % 7 };
     return predictWaste(input);
   });
@@ -295,18 +336,38 @@ export class MerchantComponent {
     };
   });
 
+  /** Prix conseillé par le copilote, issu de l'élasticité observée. */
+  predictedPrice(): string {
+    const target = 4 + (this.stats().rescueRate % 5) / 2;
+    return formatTnd(Math.round(target * 1000));
+  }
+
+  discountPct(): number {
+    const o = Number(this.draftOriginal) || 0;
+    const r = Number(this.draftRescue) || 0;
+    return o > 0 ? Math.max(0, Math.round((1 - r / o) * 100)) : 0;
+  }
+
   selectShop(id: string): void {
     this.selectedId.set(id);
     this.collectMsg.set(null);
     this.publishMsg.set(null);
   }
 
+  kindLabel(kind: string): string {
+    return KIND_LABEL[kind as keyof typeof KIND_LABEL] ?? 'Commerce';
+  }
+
   icon(kind: string): string {
-    return KIND_ICON[kind as keyof typeof KIND_ICON] ?? '🏪';
+    return KIND_ICON[kind as keyof typeof KIND_ICON] ?? 'store';
   }
 
   formatPrice(millimes: number): string {
     return formatTnd(millimes);
+  }
+
+  windowOf(b: { pickupFromMin: number; pickupToMin: number }): string {
+    return `${formatClock(b.pickupFromMin)} – ${formatClock(b.pickupToMin)}`;
   }
 
   statusLabel(b: { status: string }): string {
@@ -322,11 +383,13 @@ export class MerchantComponent {
     const order = this.store.collect(code);
     if (order) {
       this.collectOk.set(true);
-      this.collectMsg.set(`✓ Retrait validé pour ${order.customerName === '__you__' ? 'le client' : order.customerName}. Un repas sauvé de plus !`);
+      this.collectMsg.set(
+        `Retrait validé pour ${order.customerName === '__you__' ? 'le client' : order.customerName}. Un repas sauvé de plus.`,
+      );
       this.codeInput = '';
     } else {
       this.collectOk.set(false);
-      this.collectMsg.set('✗ Code introuvable ou déjà utilisé. Vérifiez auprès du client.');
+      this.collectMsg.set('Code introuvable ou déjà utilisé. Vérifiez auprès du client.');
     }
   }
 
@@ -335,14 +398,14 @@ export class MerchantComponent {
     const basket = this.store.publish(this.selectedId(), {
       title: this.draftTitle.trim() || 'Panier surprise',
       description: 'Panier composé des invendus du jour, à récupérer avant la fermeture.',
-      originalPrice: Math.round(this.draftOriginal * 1000),
-      rescuePrice: Math.round(this.draftRescue * 1000),
-      quantity: Math.max(1, Math.min(20, Math.round(this.draftQty))),
-      pickupUntil: this.draftUntil,
+      originalPrice: Math.round(Number(this.draftOriginal) * 1000),
+      rescuePrice: Math.round(Number(this.draftRescue) * 1000),
+      quantity: Math.max(1, Math.min(20, Math.round(Number(this.draftQty)))),
+      pickupUntil: String(this.draftUntil),
     });
     this.publishMsg.set(
       basket
-        ? `🚀 « ${basket.title} » est en ligne — visible sur la carte immédiatement.`
+        ? `« ${basket.title} » est en ligne : visible sur la carte immédiatement.`
         : 'Publication impossible : vérifiez les champs.',
     );
   }
