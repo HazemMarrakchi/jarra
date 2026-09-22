@@ -127,15 +127,65 @@ via le service worker PWA déjà en place. Aucun SMS, aucun coût.
 - [x] Notifications push (Web Push API + Edge Function)
 - [ ] Paiement intégré (D17 / Flouci) — nécessite un budget
 
-## ✅ Checklist de lancement pilote
+## ✅ Checklist de lancement pilote — guide pas-à-pas
 
-1. [x] `schema.sql` + `seed.sql` exécutés
-2. [x] `migration-auth.sql` exécutée + Provider Phone activé
-3. [x] `migration-pins.sql` exécutée — PINs uniques générés (CSV conservé hors git)
-4. [ ] `migration-push.sql` exécutée (SQL Editor)
-5. [ ] Edge Function `notify-baskets` déployée + secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`
-6. [ ] Numéros de test OTP — **Authentication → Providers → Phone → Test phone numbers** :
-      un numéro par commerçant, ex. `+21620000001` → code fixe `123456`
-7. [ ] Chaque commerçant lie son commerce à son numéro
-      (`/commercant` → Recevoir le code → « Lier ce commerce »)
-8. [ ] Distribuer les PINs + former au scan QR au comptoir
+> Dashboard : https://supabase.com/dashboard/project/VOTRE_REF_PROJET
+
+### 1. Base de données ✅ (fait)
+
+- [x] `schema.sql` + `seed.sql` exécutés
+- [x] `migration-auth.sql` exécutée + Provider Phone activé
+- [x] `migration-pins.sql` exécutée — PINs uniques générés (CSV conservé hors git)
+
+### 2. Table push — [ ] `migration-push.sql`
+
+1. Menu gauche → **SQL Editor** → **+ New query**
+2. Coller le contenu de [`migration-push.sql`](./migration-push.sql)
+3. **Run** → doit afficher `Success. No rows returned`
+4. Vérif : **Table Editor** → la table `push_subscriptions` apparaît
+
+### 3. Edge Function — [ ] `notify-baskets`
+
+1. Menu gauche → **Edge Functions** → **Create a new function**
+2. Nom exact : `notify-baskets` (minuscules, tiret)
+3. Effacer le code par défaut de l'éditeur, coller tout le contenu de
+   [`functions/notify-baskets/index.ts`](./functions/notify-baskets/index.ts)
+4. **Deploy** → la fonction apparaît avec un point vert
+
+### 4. Secrets — [ ] clés VAPID
+
+**Edge Functions → Secrets** (ou Project Settings → Edge Functions → Secrets) :
+
+| Name | Value |
+|---|---|
+| `VAPID_PUBLIC_KEY` | la clé publique (identique à `environment.ts`, commitable) |
+| `VAPID_PRIVATE_KEY` | la clé privée générée avec elle — **jamais dans git** |
+
+Coller les valeurs sans espace avant/après. Les valeurs masquées ensuite, c'est normal.
+(`SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont injectés automatiquement.)
+
+### 5. Numéros de test OTP — [ ]
+
+1. Menu gauche → **Authentication** → **Sign In / Providers** → **Phone** (activé)
+2. Section **Test Phone Numbers** → **Add phone number** :
+
+| Phone number | Verification code |
+|---|---|
+| `+21620000001` | `123456` |
+| `+21620000002` | `123456` |
+| `+21620000003` | `123456` |
+
+Ces numéros ne reçoivent aucun SMS : le code est fixe. Gratuit, illimité.
+
+### 6. Liaison & terrain — [ ]
+
+- [ ] Chaque commerçant lie son commerce à son numéro
+      (`/commercant` → Recevoir le code → `123456` → « Lier ce commerce »)
+- [ ] Distribuer les PINs + former au scan QR au comptoir
+
+### 7. Vérification E2E
+
+1. **OTP** : `/#/commercant` → `+21620000001` → code `123456` → session ouverte
+2. **Push** (2 appareils) : client `/#/explorer` → « 🔔 Activer » → accepter ;
+   commerçant publie un panier → la notif « 🏺 … » arrive, écran verrouillé compris
+3. Si la notif n'arrive pas : **Edge Functions → notify-baskets → Logs**
