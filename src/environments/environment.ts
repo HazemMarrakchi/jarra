@@ -9,7 +9,7 @@
 export const environment = {
   production: true,
   /** URL du projet Supabase — ex. https://abcdefgh.supabase.co */
-  supabaseUrl: '',
+  supabaseUrl: 'https://arwxxhryhhlzlsafhtae.supabase.co',
   /** Clé publique « anon » (Settings → API dans la console Supabase) */
-  supabaseAnonKey: '',
+  supabaseAnonKey: 'sb_publishable_nFEB5TEghhn5rninvzCmIA_QYP6i4Ot',
 };

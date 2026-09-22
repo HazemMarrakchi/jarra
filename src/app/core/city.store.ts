@@ -22,9 +22,15 @@ const EMPTY_IMPACT: ImpactStats = {
   mealsSaved: 0, co2KgAvoided: 0, tndSaved: 0, merchantsActive: 0, byArea: [],
 };
 
-/** Choisit le backend : Supabase si configuré, sinon simulation démo. */
+/** Détecte l'exécution sous Karma/Jasmine (tests unitaires). */
+function isTestRun(): boolean {
+  return typeof window !== 'undefined' && '__karma__' in window;
+}
+
+/** Choisit le backend : Supabase si configuré, sinon simulation démo.
+ *  En test, toujours la démo : jamais de réseau dans les specs. */
 function createProvider(): DataProvider {
-  if (environment.supabaseUrl && environment.supabaseAnonKey) {
+  if (!isTestRun() && environment.supabaseUrl && environment.supabaseAnonKey) {
     return new SupabaseProvider(environment.supabaseUrl, environment.supabaseAnonKey);
   }
   return new DemoProvider(7);
@@ -55,7 +61,7 @@ export class CityStore implements OnDestroy {
     this.applySnapshot();
     void this.provider.init(() => this.applySnapshot());
     // En test (Jasmine) on ne démarre pas la boucle de temps.
-    if (typeof window !== 'undefined' && !('__karma__' in window)) {
+    if (!isTestRun()) {
       this.timer = window.setInterval(
         () => this.advance(),
         this.mode === 'demo' ? DEMO_TICK_MS : LIVE_TICK_MS,
