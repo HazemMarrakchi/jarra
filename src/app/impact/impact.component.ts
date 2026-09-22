@@ -170,8 +170,7 @@ import { KIND_ICON, KIND_LONG, KINDS } from '../core/ui';
           </p>
         </div>
         <div class="row gap-sm wrap">
-          <a class="btn btn-invert" routerLink="/publier"><span class="ms ms-18">bolt</span>Publier un invendu</a>
-          <a class="btn btn-invert" routerLink="/commercant"><span class="ms ms-18">storefront</span>Espace commerçant</a>
+          <a class="btn btn-invert" routerLink="/commercant"><span class="ms ms-18">bolt</span>Publier un invendu en 10 s</a>
         </div>
       </div>
     </div>

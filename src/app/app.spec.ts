@@ -145,14 +145,14 @@ describe('MerchantComponent (dashboard)', () => {
     await TestBed.configureTestingModule({ imports: [MerchantComponent] }).compileComponents();
   });
 
-  it('affiche le commerce sélectionné et une prédiction d\'invendus', () => {
+  it('affiche le commerce sélectionné et son bilan du mois', () => {
     const fixture = TestBed.createComponent(MerchantComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
     expect(component.me()).toBeTruthy();
-    expect(component.prediction().expected).toBeGreaterThan(0);
-    expect(component.prediction().confidence).toBeGreaterThanOrEqual(45);
+    expect(component.stats().rescueRate).toBeGreaterThanOrEqual(0);
+    expect(component.stats().rescueRate).toBeLessThanOrEqual(100);
   });
 
   it('publie un panier qui apparaît immédiatement dans la liste du commerçant', async () => {

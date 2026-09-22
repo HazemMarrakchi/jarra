@@ -8,7 +8,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CityStore } from '../core/city.store';
 import { KIND_LABEL, formatClock, formatTnd } from '../core/model';
-import { demoHistoryFor, predictWaste, PredictionInput } from '../core/predictor';
 import { KIND_ICON } from '../core/ui';
 
 @Component({
@@ -38,7 +37,6 @@ import { KIND_ICON } from '../core/ui';
                 }
               </select>
             </div>
-            <a class="btn btn-primary" routerLink="/publier"><span class="ms ms-18">bolt</span>Publication express</a>
           </div>
         </div>
       </div>
@@ -47,53 +45,9 @@ import { KIND_ICON } from '../core/ui';
     <div class="shell-lg dash">
       <!-- ── Colonne principale ─────────────────────────────────── -->
       <div class="stack gap-lg">
-        <!-- Jarra Copilot Intelligence -->
-        <div class="ai-banner">
-          <span class="ai-ico"><span class="ms ms-24">psychology</span></span>
-          <div>
-            <div class="row between wrap gap-sm">
-              <b class="headline-sm">Jarra Copilot Intelligence</b>
-              <span class="eco-badge"><span class="ms" style="font-size:14px">verified</span>Pilote automatique activé</span>
-            </div>
-            <p class="body-md" style="margin-top:var(--space-sm)">
-              Surplus anticipé :
-              <b class="mono-num">{{ prediction().expected }} unités invendues</b> au prochain service, avec une
-              confiance de {{ prediction().confidence }} %.
-            </p>
-            <div class="prob">
-              <span class="label-sm" style="color:var(--on-secondary-container)">Fourchette</span>
-              <span class="bar"><i [style.width.%]="prediction().confidence"></i></span>
-              <span class="pc">{{ prediction().low }} – {{ prediction().high }}</span>
-            </div>
-            <div class="copilot-actions">
-              <button class="btn btn-primary btn-sm" type="button" (click)="publish()">
-                <span class="ms ms-18">rocket_launch</span>Programmer &amp; publier les paniers en 1 clic
-              </button>
-              <button class="btn btn-ghost btn-sm" type="button" (click)="publishMsg.set('Seuils de publication modifiés pour ce service.')">
-                <span class="ms ms-18">tune</span>Modifier les seuils
-              </button>
-            </div>
-            @if (publishMsg(); as msg) {
-              <p class="body-sm" role="status" style="color:var(--brand-mint-ink);margin-top:var(--space-sm)">{{ msg }}</p>
-            }
-            <div class="elasticity">
-              <div>
-                <p class="label-sm muted" style="text-transform:uppercase">Élasticité vente / tarif</p>
-                <p class="body-sm muted">
-                  À {{ predictedPrice() }} DT, votre panier se vend en moyenne en 14 minutes dans le quartier.
-                </p>
-              </div>
-              <span class="price"><span class="price-now">{{ predictedPrice() }}</span><span class="price-cur">DT</span></span>
-            </div>
-          </div>
-        </div>
-
         <!-- Publication express inline -->
         <div class="card card-pad">
-          <div class="row between wrap gap-sm" style="margin-bottom:var(--space-md)">
-            <h2 class="headline-sm">Publication express en 10 secondes</h2>
-            <a class="btn btn-ghost btn-sm" routerLink="/publier">Ouvrir le flux complet<span class="ms ms-18">arrow_forward</span></a>
-          </div>
+          <h2 class="headline-sm" style="margin-bottom:var(--space-md)">Publication express en 10 secondes</h2>
           <div class="pub-inline">
             <div class="field">
               <label for="dTitle">Titre du panier</label>
@@ -433,13 +387,6 @@ export class MerchantComponent implements OnDestroy {
     return [...this.store.basketsOf(this.selectedId())].reverse();
   });
 
-  readonly prediction = computed(() => {
-    const m = this.me();
-    const history = demoHistoryFor(m?.kind ?? 'bakery', this.selectedId().length);
-    const input: PredictionInput = { history, weekday: (this.store.clockMin() + 1) % 7 };
-    return predictWaste(input);
-  });
-
   readonly stats = computed(() => {
     this.store.version();
     const mine = this.store.basketsOf(this.selectedId());
@@ -465,12 +412,6 @@ export class MerchantComponent implements OnDestroy {
       co2: Math.round(collected.length * 2.5 * 10) / 10,
     };
   });
-
-  /** Prix conseillé par le copilote, issu de l'élasticité observée. */
-  predictedPrice(): string {
-    const target = 4 + (this.stats().rescueRate % 5) / 2;
-    return formatTnd(Math.round(target * 1000));
-  }
 
   discountPct(): number {
     const o = Number(this.draftOriginal) || 0;

@@ -85,88 +85,6 @@ import { KIND_ICON } from '../core/ui';
         </div>
       </section>
 
-      <!-- ── Engagements ─────────────────────────────────────────── -->
-      <section class="shell-lg section">
-        <div class="section-head">
-          <h2>Pourquoi {{ m.name }} s'engage avec Jarra.tn ?</h2>
-        </div>
-        <div class="engage-grid">
-          @for (e of engagements; track e.title) {
-            <div class="card card-pad stack gap-sm">
-              <span class="ai-ico"><span class="ms ms-24">{{ e.icon }}</span></span>
-              <h4>{{ e.title }}</h4>
-              <p class="body-sm muted">{{ e.text }}</p>
-            </div>
-          }
-          <div class="card card-pad artisan">
-            <img [src]="portrait" width="400" height="400" alt="Portrait de l'artisan derrière son comptoir." />
-            <div>
-              <h4>L'équipe {{ m.name }}</h4>
-              <p class="body-sm muted">
-                « On préfère vendre moins cher que jeter. Et voir les voisins repartir avec un panier, ça change le
-                quartier. »
-              </p>
-              <span class="eco-badge" style="margin-top:var(--space-sm)">
-                <span class="ms" style="font-size:14px">handshake</span>Parole d'artisan
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── Avis ────────────────────────────────────────────────── -->
-      <section class="avis-band">
-        <div class="shell-lg">
-          <div class="section-head">
-            <h2>Avis de clients du quartier {{ m.area }}</h2>
-            <p class="body-md muted">Notes déposées après un retrait réellement validé au comptoir.</p>
-          </div>
-          <div class="avis-grid">
-            <div class="card card-pad stack gap-sm">
-              <div class="row gap-sm">
-                <img [src]="portrait" width="400" height="400" alt="" class="avatar" />
-                <div>
-                  <b class="label-lg">Amine B.</b>
-                  <p class="label-sm muted">Retrait validé hier</p>
-                </div>
-                <span class="stars">
-                  <span class="ms ms-18 ms-fill">star</span><span class="ms ms-18 ms-fill">star</span>
-                  <span class="ms ms-18 ms-fill">star</span><span class="ms ms-18 ms-fill">star</span>
-                  <span class="ms ms-18 ms-fill">star</span>
-                </span>
-              </div>
-              <p class="body-sm">Paniers généreux et accueil impeccable. Tout était encore chaud à 19h.</p>
-            </div>
-            <div class="card card-pad stack gap-sm">
-              <div class="row gap-sm">
-                <img [src]="portrait" width="400" height="400" alt="" class="avatar" />
-                <div>
-                  <b class="label-lg">Salma T.</b>
-                  <p class="label-sm muted">Retrait validé cette semaine</p>
-                </div>
-                <span class="stars">
-                  <span class="ms ms-18 ms-fill">star</span><span class="ms ms-18 ms-fill">star</span>
-                  <span class="ms ms-18 ms-fill">star</span><span class="ms ms-18 ms-fill">star</span>
-                  <span class="ms ms-18">star</span>
-                </span>
-              </div>
-              <p class="body-sm">Prix imbattable pour la même qualité qu'en vitrine. Je passe deux fois par semaine.</p>
-            </div>
-            <div class="card card-pad stack gap-sm">
-              <div class="label-sm muted">Répartition des notes</div>
-              @for (r of ratings(); track r.stars) {
-                <div class="rating-row">
-                  <span class="mono-num">{{ r.stars }}</span>
-                  <span class="meter"><i [style.width.%]="r.share"></i></span>
-                  <span class="mono-num muted">{{ r.share }} %</span>
-                </div>
-              }
-            </div>
-          </div>
-          <p class="label-sm muted" style="margin-top:var(--space-md)">Avis simulés pour la démonstration.</p>
-        </div>
-      </section>
-
       <!-- ── Voisins ─────────────────────────────────────────────── -->
       <section class="shell-lg section">
         <div class="section-head">
@@ -314,12 +232,6 @@ export class BoutiqueComponent {
     { icon: 'point_of_sale', title: 'Payez au comptoir', text: 'Espèces ou TPE local, directement à l\'artisan. Jarra ne prélève rien en ligne.' },
   ];
 
-  readonly engagements = [
-    { icon: 'eco', title: 'Engagement zéro gaspillage actif', text: 'Publication quotidienne des invendus, mesurée et publiée dans le baromètre public.' },
-    { icon: 'volunteer_activism', title: 'Solidarité de quartier', text: 'Les paniers non retirés sont proposés aux associations partenaires du quartier.' },
-    { icon: 'savings', title: 'Soutien au pouvoir d\'achat', text: 'Des prix de sauvetage entre -50 % et -70 % sur la valeur de vitrine.' },
-    { icon: 'verified_user', title: 'Transparence du stock', text: 'Le stock est décrémenté à chaque réservation. Aucun panier fantôme.' },
-  ];
 
   readonly shop = computed(() => {
     this.store.version();
@@ -363,21 +275,6 @@ export class BoutiqueComponent {
     const total = mine.reduce((s, b) => s + b.quantityTotal, 0);
     const sold = this.store.orders().filter((o) => o.status !== 'cancelled' && mine.some((b) => b.id === o.basketId)).length;
     return total > 0 ? Math.round((sold / total) * 100) : 0;
-  });
-
-  readonly ratings = computed(() => {
-    const base = this.shop()?.rating ?? 4.5;
-    const five = Math.min(92, Math.max(40, Math.round(base * 18)));
-    const four = Math.max(4, Math.round((100 - five) * 0.7));
-    const three = Math.max(1, Math.round((100 - five - four) * 0.6));
-    const two = Math.max(1, 100 - five - four - three - 1);
-    return [
-      { stars: 5, share: five },
-      { stars: 4, share: four },
-      { stars: 3, share: three },
-      { stars: 2, share: two },
-      { stars: 1, share: 1 },
-    ];
   });
 
   kindLabel(): string {

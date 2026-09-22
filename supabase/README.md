@@ -119,12 +119,30 @@ via le service worker PWA déjà en place. Aucun SMS, aucun coût.
 > Limite honnête : iOS exige que l'app soit « installée » sur l'écran
 > d'accueil (PWA) pour recevoir des notifications. Android/Chrome : direct.
 
+## Section admin (`/admin`)
+
+Page d'administration du pilote, réservée aux numéros listés dans la table
+`admins` (connexion OTP, droits vérifiés côté base par `is_admin()`).
+
+Fonctions : statistiques pilote (commerces, paniers en ligne, réservations,
+abonnés push), **ajout d'un commerce** (avec PIN initial affiché une fois),
+**régénération de PIN** (délie l'ancien numéro → nouvelle revendication),
+**modération des paniers** (retrait de la carte).
+
+Mise en route : exécuter [`migration-admin.sql`](./migration-admin.sql) puis
+ajouter votre numéro (celui utilisé pour l'OTP) :
+
+```sql
+insert into public.admins (phone, label) values ('+21620000000', 'Équipe pilote');
+```
+
 ## Étapes suivantes (roadmap)
 
 - [x] Auth commerçant par téléphone OTP (colonne `merchants.owner_id`)
 - [x] `collect_order` durci : propriétaire connecté exigé pour les commerces liés
 - [x] PIN aléatoire unique par commerçant (`migration-pins.sql`)
 - [x] Notifications push (Web Push API + Edge Function)
+- [x] Section admin `/admin` (`migration-admin.sql` : `admins`, `is_admin()`, RPC d'administration)
 - [ ] Paiement intégré (D17 / Flouci) — nécessite un budget
 
 ## ✅ Checklist de lancement pilote — guide pas-à-pas
@@ -189,3 +207,15 @@ Ces numéros ne reçoivent aucun SMS : le code est fixe. Gratuit, illimité.
 2. **Push** (2 appareils) : client `/#/explorer` → « 🔔 Activer » → accepter ;
    commerçant publie un panier → la notif « 🏺 … » arrive, écran verrouillé compris
 3. Si la notif n'arrive pas : **Edge Functions → notify-baskets → Logs**
+
+### 8. Section admin — [ ] `migration-admin.sql`
+
+1. **SQL Editor** → coller [`migration-admin.sql`](./migration-admin.sql) → **Run**
+2. Autoriser votre numéro (celui du compte OTP, format `+216…`) :
+
+   ```sql
+   insert into public.admins (phone, label) values ('+21620000000', 'Équipe pilote');
+   ```
+
+3. Vérif : ouvrir `/#/admin` → connexion OTP → le tableau de bord apparaît
+   (sinon la page affiche « Numéro non autorisé » avec la requête SQL exacte)

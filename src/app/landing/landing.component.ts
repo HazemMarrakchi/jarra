@@ -1,6 +1,5 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BasketListComponent } from '../core/basket-list.component';
 import { CityStore } from '../core/city.store';
 import { formatClock, formatTnd } from '../core/model';
 import { PHOTOS } from '../core/photos';
@@ -9,7 +8,7 @@ import { PHOTOS } from '../core/photos';
   selector: 'jr-landing',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BasketListComponent],
+  imports: [RouterLink],
   template: `
     <!-- ── Héros ────────────────────────────────────────────────── -->
     <section class="hero">
@@ -115,20 +114,6 @@ import { PHOTOS } from '../core/photos';
       </div>
     </section>
 
-    <!-- ── Paniers du soir ──────────────────────────────────────── -->
-    <section class="shell-lg section">
-      <div class="section-head">
-        <h2>Invendus du soir à proximité</h2>
-        <p class="body-md muted">
-          Les paniers les plus abordables du moment, chez des artisans vérifiés, avec leur créneau de retrait réel.
-        </p>
-      </div>
-      <jr-basket-list [baskets]="homeBaskets()" />
-      <div class="row" style="margin-top:var(--space-lg)">
-        <a class="btn btn-ghost" routerLink="/explorer">Ouvrir la carte complète<span class="ms ms-18">arrow_forward</span></a>
-      </div>
-    </section>
-
     <!-- ── Appel commerçants ────────────────────────────────────── -->
     <section class="shell-lg section-tight">
       <div class="panel-ink cta-band">
@@ -139,8 +124,7 @@ import { PHOTOS } from '../core/photos';
           </p>
         </div>
         <div class="row gap-sm wrap">
-          <a class="btn btn-invert" routerLink="/publier"><span class="ms ms-18">bolt</span>Publier un invendu</a>
-          <a class="btn btn-invert" routerLink="/commercant"><span class="ms ms-18">psychology</span>Voir le copilote IA</a>
+          <a class="btn btn-invert" routerLink="/commercant"><span class="ms ms-18">bolt</span>Publier un invendu en 10 s</a>
         </div>
       </div>
     </section>
@@ -216,15 +200,6 @@ export class LandingComponent implements AfterViewInit, OnDestroy {
   ];
 
   private animTimer = 0;
-
-  /** Trois paniers mis en avant, les plus abordables du moment. */
-  readonly homeBaskets = computed(() => {
-    this.store.version();
-    return [...this.store.baskets()]
-      .filter((b) => b.status === 'live' && b.quantityLeft > 0)
-      .sort((a, b) => a.rescuePrice - b.rescuePrice)
-      .slice(0, 3);
-  });
 
   readonly liveCount = computed(() => {
     this.store.version();

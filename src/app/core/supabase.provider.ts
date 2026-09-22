@@ -207,6 +207,50 @@ export class SupabaseProvider implements DataProvider {
     this.setSessionUser(null, null);
   }
 
+  // ── Administration (section /admin — migration-admin.sql) ───────────
+
+  /** Vrai si le numéro connecté figure dans la table `admins`. */
+  async isAdmin(): Promise<boolean> {
+    if (!this.userId) return false;
+    return (await this.rpc<boolean>('is_admin', {})) === true;
+  }
+
+  /** Ajoute un commerce et retourne son PIN initial (affiché une fois). */
+  async adminAddMerchant(input: {
+    name: string;
+    kind: string;
+    area: string;
+    lat: number;
+    lon: number;
+  }): Promise<{ id: string; pin: string } | null> {
+    const data = await this.rpc<{ id: string; pin: string }>('admin_add_merchant', {
+      p_name: input.name,
+      p_kind: input.kind,
+      p_area: input.area,
+      p_lat: input.lat,
+      p_lon: input.lon,
+    });
+    if (data) await this.reloadSafe();
+    return data;
+  }
+
+  /** Régénère le PIN d'un commerce (délie l'ancien numéro). Null = refusé. */
+  async adminResetPin(merchantId: string): Promise<string | null> {
+    return this.rpc<string>('admin_reset_pin', { p_merchant_id: merchantId });
+  }
+
+  /** Retire un panier de la carte (modération anti-spam). */
+  async adminExpireBasket(basketId: string): Promise<boolean> {
+    const ok = await this.rpc<boolean>('admin_expire_basket', { p_basket_id: basketId });
+    if (ok === true) await this.reloadSafe();
+    return ok === true;
+  }
+
+  /** Nombre d'appareils abonnés aux notifications push. */
+  async adminPushCount(): Promise<number | null> {
+    return this.rpc<number>('admin_push_count', {});
+  }
+
   // ── Notifications push (étape 3c) ─────────────────────────────────
 
   async savePushSubscription(sub: {

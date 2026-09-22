@@ -36,22 +36,11 @@ import { LivePillComponent } from './core/ticker.component';
           <span class="brand-name">Jarra<i>.tn</i></span>
         </a>
 
-        <div class="region">
-          <span class="ms ms-18">location_on</span>
-          <label class="sr" for="regionSel">Zone</label>
-          <select id="regionSel">
-            <option>Gabès &amp; oasis littorale</option>
-            <option>Grand Gabès</option>
-            <option>Sud-Est · Médenine</option>
-          </select>
-        </div>
-
         <nav class="nav" aria-label="Navigation principale">
           <a routerLink="/explorer" routerLinkActive="active">Explorer</a>
-          <a routerLink="/boutique" routerLinkActive="active">Boutique</a>
-          <a routerLink="/publier" routerLinkActive="active">Publier en 10s</a>
-          <a routerLink="/commercant" routerLinkActive="active">Gestion &amp; IA</a>
-          <a routerLink="/impact" routerLinkActive="active">Impact public</a>
+          <a routerLink="/boutique" routerLinkActive="active">Boutiques</a>
+          <a routerLink="/impact" routerLinkActive="active">Impact</a>
+          <a routerLink="/commercant" routerLinkActive="active">Espace Commerçant</a>
         </nav>
 
         <div class="top-right">
@@ -77,8 +66,8 @@ import { LivePillComponent } from './core/ticker.component';
               }
             </button>
           }
-          <a class="btn btn-primary btn-sm top-cta" routerLink="/publier">
-            <span class="ms ms-18">bolt</span>Publier un invendu en 10s
+          <a class="btn btn-primary btn-sm top-cta" routerLink="/commercant">
+            <span class="ms ms-18">bolt</span>Publier un invendu
           </a>
           <button
             class="btn btn-quiet btn-sm burger"
@@ -95,11 +84,10 @@ import { LivePillComponent } from './core/ticker.component';
       @if (menu) {
         <div class="mobile-menu">
           <nav class="shell-lg" aria-label="Navigation mobile">
-            <a routerLink="/explorer" (click)="menu = false">Explorer &amp; Carte Live</a>
-            <a routerLink="/boutique" (click)="menu = false">Boutique Exemple</a>
-            <a routerLink="/publier" (click)="menu = false">Publication Express 10s</a>
-            <a routerLink="/commercant" (click)="menu = false">Gestion &amp; IA Prédictive</a>
-            <a routerLink="/impact" (click)="menu = false">Impact Public &amp; Baromètre</a>
+            <a routerLink="/explorer" (click)="menu = false">Explorer — carte en direct</a>
+            <a routerLink="/boutique" (click)="menu = false">Les boutiques anti-gaspi</a>
+            <a routerLink="/impact" (click)="menu = false">Impact public</a>
+            <a routerLink="/commercant" (click)="menu = false">Espace commerçant</a>
           </nav>
         </div>
       }
@@ -115,9 +103,6 @@ import { LivePillComponent } from './core/ticker.component';
       </a>
       <a routerLink="/explorer" routerLinkActive="active">
         <span class="ms ms-24">map</span><span>Explorer</span>
-      </a>
-      <a routerLink="/publier" routerLinkActive="active">
-        <span class="ms ms-24">bolt</span><span>Publier</span>
       </a>
       <a routerLink="/impact" routerLinkActive="active">
         <span class="ms ms-24">public</span><span>Impact</span>
@@ -161,15 +146,14 @@ import { LivePillComponent } from './core/ticker.component';
 
           <div>
             <h4>Artisans &amp; Partenaires</h4>
-            <a routerLink="/commercant">Espace commerçant &amp; IA</a>
-            <a routerLink="/publier">Publier un invendu en 10s</a>
+            <a routerLink="/commercant">Espace commerçant</a>
+            <a routerLink="/admin">Administration pilote</a>
             <a href="https://github.com/HazemMarrakchi/jarra" target="_blank" rel="noopener">Code source</a>
-            <p>hello&#64;jarra.tn</p>
           </div>
         </div>
         <div class="foot-bot">
           <span>© 2026 Jarra.tn — conçu et développé à Gabès, Tunisie</span>
-          <span>Démonstration : commerces et données simulés. Aucun paiement réel.</span>
+          <span>Pilote citoyen à Gabès — paiement au comptoir, aucun frais en ligne.</span>
         </div>
       </div>
     </footer>

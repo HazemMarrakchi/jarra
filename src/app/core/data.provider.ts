@@ -102,5 +102,30 @@ export interface DataProvider {
   /** Supprime l'abonnement Web Push de cet appareil. */
   deletePushSubscription?(endpoint: string): Promise<boolean>;
 
+  // ── Administration (section /admin — optionnel, live uniquement) ──
+  // Autorisation vérifiée côté base (migration-admin.sql) : seuls les
+  // numéros présents dans la table `admins` peuvent agir.
+
+  /** Vrai si le numéro connecté figure dans la table `admins`. */
+  isAdmin?(): Promise<boolean>;
+
+  /** Ajoute un commerce et retourne son PIN initial (affiché une fois). */
+  adminAddMerchant?(input: {
+    name: string;
+    kind: string;
+    area: string;
+    lat: number;
+    lon: number;
+  }): Promise<{ id: string; pin: string } | null>;
+
+  /** Régénère le PIN d'un commerce (délie l'ancien numéro). */
+  adminResetPin?(merchantId: string): Promise<string | null>;
+
+  /** Retire un panier de la carte (modération). */
+  adminExpireBasket?(basketId: string): Promise<boolean>;
+
+  /** Nombre d'appareils abonnés aux notifications push. */
+  adminPushCount?(): Promise<number | null>;
+
   destroy(): void;
 }

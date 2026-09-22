@@ -155,6 +155,43 @@ export class CityStore implements OnDestroy {
     return (await this.provider.deletePushSubscription?.(endpoint)) ?? false;
   }
 
+  // ── Administration (live uniquement — voir /admin) ────────────────
+
+  /** Vrai si le numéro connecté est administrateur. Faux en démo. */
+  async isAdmin(): Promise<boolean> {
+    return (await this.provider.isAdmin?.()) ?? false;
+  }
+
+  /** Ajoute un commerce (pilote) ; retourne son PIN initial. */
+  async adminAddMerchant(input: {
+    name: string;
+    kind: string;
+    area: string;
+    lat: number;
+    lon: number;
+  }): Promise<{ id: string; pin: string } | null> {
+    const r = (await this.provider.adminAddMerchant?.(input)) ?? null;
+    if (r) this.applySnapshot();
+    return r;
+  }
+
+  /** Régénère le PIN d'un commerce (affiché une seule fois). */
+  async adminResetPin(merchantId: string): Promise<string | null> {
+    return (await this.provider.adminResetPin?.(merchantId)) ?? null;
+  }
+
+  /** Retire un panier de la carte (modération). */
+  async adminExpireBasket(basketId: string): Promise<boolean> {
+    const ok = (await this.provider.adminExpireBasket?.(basketId)) ?? false;
+    if (ok) this.applySnapshot();
+    return ok;
+  }
+
+  /** Nombre d'appareils abonnés aux notifications push (null en démo). */
+  async adminPushCount(): Promise<number | null> {
+    return (await this.provider.adminPushCount?.()) ?? null;
+  }
+
   merchant(id: string): Merchant | undefined {
     return this.merchants().find((m) => m.id === id);
   }
