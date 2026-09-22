@@ -1,45 +1,159 @@
-﻿import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { BasketListComponent } from '../core/basket-list.component';
 import { CityMapComponent, MapPin } from '../core/city-map.component';
 import { CityStore } from '../core/city.store';
-import { FoodArtComponent } from '../core/food-art.component';
-import {
-  Basket, KIND_ICON, KIND_LABEL, Merchant, MerchantKind,
-  discountPct, formatClock, formatTnd,
-} from '../core/model';
+import { Basket, Merchant, MerchantKind, formatClock } from '../core/model';
+import { CITIZEN_POS, KINDS, KIND_ICON, KIND_LONG, distanceM, formatDistance } from '../core/ui';
 
 @Component({
   selector: 'jr-explore',
   standalone: true,
-  imports: [CityMapComponent, RouterLink, FoodArtComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CityMapComponent, RouterLink, BasketListComponent],
   template: `
-    <div class="shell">
-      <header class="page-head rise">
-        <div>
-          <h1>La carte du sauvetage</h1>
-          <p class="sub">
-            {{ liveCount() }} paniers disponibles à Gabès — il est
-            <span class="clock">{{ clock() }}</span> en ville.
-          </p>
-        </div>
-        <span class="live-chip"><i></i>LIVE</span>
-      </header>
+    <!-- ── En-tête de page ──────────────────────────────────────── -->
+    <section class="page-head">
+      <div class="shell-lg head-inner">
+        <span class="eco-badge" style="background:var(--secondary-container);border:0;color:var(--on-secondary-container);padding:.35rem .8rem">
+          <span class="ms" style="font-size:15px">payments</span>
+          Paiement direct sur place (Espèces &amp; TPE local) • Aucune carte bancaire requise
+        </span>
 
-      <!-- filtres -->
-      <div class="filters rise">
-        <button class="fchip" [class.on]="kindFilter() === 'all'" (click)="kindFilter.set('all')">
-          Tous <b>{{ totalLive() }}</b>
-        </button>
-        @for (k of kinds; track k) {
-          <button class="fchip" [class.on]="kindFilter() === k" (click)="kindFilter.set(k)">
-            {{ iconOf(k) }} {{ labelOf(k) }} <b>{{ countOf(k) }}</b>
+        <div class="head-cols">
+          <div>
+            <h1>Panier frais &amp; invendus du soir à proximité</h1>
+            <p class="body-lg muted" style="margin-top:var(--space-sm);max-width:44rem">
+              Repérez les disponibilités en direct chez vos artisans de quartier et réglez sur place, au comptoir, sans
+              aucun frais intermédiaire.
+            </p>
+          </div>
+          <div class="update-card">
+            <span class="dot-live"></span>
+            <div>
+              <span class="label-sm muted" style="text-transform:uppercase">Mise à jour directe</span>
+              <p class="headline-sm mono-num">{{ clock() }} • Gabès</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Barre d'outils collante ──────────────────────────────── -->
+    <section class="toolbar">
+      <div class="shell-lg">
+        <div class="tool-grid">
+          <div class="field-group" style="grid-column:span 6">
+            <span class="ms ms-20">search</span>
+            <label class="sr" for="qSearch">Rechercher un commerce ou un quartier</label>
+            <input
+              id="qSearch"
+              class="input"
+              type="search"
+              placeholder="Boulangerie, quartier, artisan…"
+              [value]="query()"
+              (input)="query.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="field-group" style="grid-column:span 3">
+            <span class="ms ms-20">near_me</span>
+            <label class="sr" for="qRadius">Rayon</label>
+            <select id="qRadius" class="select" [value]="radius()" (change)="radius.set(+$any($event.target).value)">
+              <option [value]="2000">Rayon &lt; 2 km (à pied)</option>
+              <option [value]="5000">Rayon &lt; 5 km (environs)</option>
+              <option [value]="99999">Tout Gabès</option>
+            </select>
+          </div>
+
+          <div class="field-group" style="grid-column:span 3">
+            <span class="ms ms-20">schedule</span>
+            <label class="sr" for="qSlot">Créneau</label>
+            <select id="qSlot" class="select" [value]="slot()" (change)="slot.set($any($event.target).value)">
+              <option value="all">Tous horaires</option>
+              <option value="evening">Retrait ce soir (18h – 21h)</option>
+              <option value="late">Tardif (après 20h30)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chips">
+          <button class="fchip" type="button" [attr.aria-pressed]="kindFilter() === 'all'" (click)="kindFilter.set('all')">
+            <span class="ms ms-18">apps</span>Tous les invendus <b>{{ totalLive() }}</b>
           </button>
+          @for (k of kinds; track k) {
+            <button class="fchip" type="button" [attr.aria-pressed]="kindFilter() === k" (click)="kindFilter.set(k)">
+              <span class="ms ms-18">{{ iconOf(k) }}</span>{{ labelOf(k) }} <b>{{ countOf(k) }}</b>
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Corps : liste + carte ────────────────────────────────── -->
+    <section class="shell-lg body-grid">
+      <div class="col-list">
+        <!-- Bandeau prévision IA -->
+        <div class="ai-banner">
+          <span class="ai-ico"><span class="ms ms-24">auto_awesome</span></span>
+          <div>
+            <div class="ai-title">
+              <span class="label-sm" style="color:var(--on-secondary-container);text-transform:uppercase">IA Prédictive Jarra Pulse</span>
+              <span class="dot-live" style="width:6px;height:6px"></span>
+              <span class="label-sm muted">Confiance {{ confidence() }} %</span>
+            </div>
+            <p class="body-md" style="margin-top:6px">
+              Prédiction de surplus en cours sur la prochaine heure :
+              <b class="mono-num">+{{ coming() }} paniers attendus</b> à Gabès après les fins de fournée.
+            </p>
+            <div class="prob">
+              <span class="label-sm" style="color:var(--on-secondary-container)">Fourchette</span>
+              <span class="bar"><i [style.width.%]="confidence()"></i></span>
+              <span class="pc">{{ coming() }} – {{ coming() + 6 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-head">
+          <p class="label-lg">Paniers confirmés disponibles immédiatement</p>
+          <div class="row gap-sm">
+            <span class="label-sm muted">Trier par</span>
+            <label class="sr" for="sortSel">Trier les résultats</label>
+            <select id="sortSel" class="select" style="height:2.25rem;width:auto" [value]="sortMode()" (change)="sortMode.set($any($event.target).value)">
+              <option value="price">Prix croissant</option>
+              <option value="distance">Plus proche de vous</option>
+              <option value="slot">Créneau le plus tôt</option>
+            </select>
+          </div>
+        </div>
+
+        @if (filtered().length === 0) {
+          <div class="empty">
+            <span class="ms ms-40">search_off</span>
+            <b>Aucun invendu ne correspond à ces filtres.</b>
+            <span class="body-sm">Élargissez le rayon ou revenez en fin de service — la ville bouge vite.</span>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="reset()">Réinitialiser les filtres</button>
+          </div>
+        } @else {
+          <jr-basket-list [baskets]="filtered()" [pickedId]="selectedId()" />
         }
+
+        <p class="body-sm muted">
+          {{ filtered().length }} panier(s) affiché(s) sur {{ totalLive() }} publiés aujourd'hui dans la zone.
+        </p>
       </div>
 
-      <div class="explore-grid">
-        <!-- carte -->
-        <div class="map-col rise">
+      <!-- Colonne carte -->
+      <div class="col-map">
+        <div class="map-card">
+          <div class="map-head">
+            <div>
+              <p class="label-sm muted" style="text-transform:uppercase">Carte en direct</p>
+              <p class="label-lg">{{ mapCount() }} commerces · {{ totalLive() }} paniers</p>
+            </div>
+            <span class="eco-badge"><span class="ms" style="font-size:14px">radar</span>Live</span>
+          </div>
+
           <jr-city-map
             [pins]="pins()"
             [selectedId]="selectedId()"
@@ -47,203 +161,175 @@ import {
             (select)="selectPin($event)"
             (background)="selectedId.set(null)"
           />
-        </div>
 
-        <!-- liste des paniers -->
-        <div class="list-col">
-          @if (filtered().length === 0) {
-            <div class="empty card">
-              <span class="e-ico">🏺</span>
-              <p><strong>Plus rien par ici pour l'instant.</strong></p>
-              <p class="sub">Les commerçants republient en fin de service — la ville bouge, revenez dans un instant.</p>
-            </div>
-          }
-          @for (b of filtered(); track b.id) {
-            <article class="basket card rise" [class.selected]="b.merchantId === selectedId()">
-              <a class="b-banner" [routerLink]="['/basket', b.id]" [attr.aria-label]="'Voir ' + b.title">
-                <jr-food-art [kind]="merchantOf(b).kind" />
-                <span class="discount">−{{ discountOf(b) }}%</span>
-                <span class="qty-pill" [class.low]="b.quantityLeft <= 2">
-                  {{ b.quantityLeft }} restant{{ b.quantityLeft > 1 ? 's' : '' }}
-                </span>
-              </a>
-              <div class="b-body">
-                <h3>{{ b.title }}</h3>
-                <span class="b-merchant">{{ merchantOf(b).name }} · {{ merchantOf(b).area }}</span>
-                <p class="b-desc">{{ b.description }}</p>
-                <div class="b-foot">
-                  <div class="b-price">
-                    <strong>{{ price(b.rescuePrice) }}<i>TND</i></strong>
-                    <s>{{ price(b.originalPrice) }}</s>
-                  </div>
-                  <span class="pickup">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-                    {{ window(b) }}
-                  </span>
+          @if (picked(); as m) {
+            <div class="map-pop">
+              <div class="row between" style="align-items:flex-start">
+                <div>
+                  <p class="label-sm muted" style="text-transform:uppercase">{{ labelOf(m.kind) }} · {{ m.area }}</p>
+                  <h3 style="margin-top:2px">{{ m.name }}</h3>
                 </div>
-                <a class="btn btn-primary b-cta" [routerLink]="['/basket', b.id]">Réserver ce panier</a>
+                <button class="btn btn-quiet btn-sm" type="button" aria-label="Fermer" (click)="selectedId.set(null)">
+                  <span class="ms ms-18">close</span>
+                </button>
               </div>
-            </article>
+              <div class="row between" style="margin-top:var(--space-sm)">
+                <span class="eco-badge"><span class="ms" style="font-size:14px">shopping_basket</span>{{ unitsOf(m.id) }} unités</span>
+                <a class="btn btn-primary btn-sm" [routerLink]="['/boutique', m.id]">
+                  <span class="ms ms-18">storefront</span>Voir la boutique
+                </a>
+              </div>
+            </div>
           }
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- ── Alerte quartier ──────────────────────────────────────── -->
+    <section class="shell-lg section-tight">
+      <div class="panel-ink alert-band">
+        <div>
+          <span class="eco-badge" style="background:rgba(255,255,255,.14);border:0;color:#c9f3dd">
+            <span class="ms" style="font-size:15px">notifications_active</span>Alerte de quartier
+          </span>
+          <h2 style="color:var(--on-primary);margin-top:var(--space-sm)">Ne ratez plus aucun panier du soir dans votre quartier</h2>
+          <p class="body-md" style="color:var(--on-primary-container);margin-top:var(--space-sm);max-width:48rem">
+            Recevez une alerte dès qu'un artisan publie un invendu à moins de 500 mètres, sans installer d'application.
+          </p>
+        </div>
+        <button class="btn btn-invert" type="button">
+          <span class="ms ms-18">chat</span>Activer mes alertes WhatsApp
+        </button>
+      </div>
+    </section>
   `,
   styles: [`
-    .page-head {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 1rem; padding: 1.8rem 0 1rem;
-    }
-    .page-head h1 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); }
-    .sub { color: var(--muted); font-size: 0.92rem; margin: 0.4rem 0 0; font-weight: 300; }
-    .clock { color: var(--gold); font-family: var(--font-mono); font-weight: 600; }
-    .live-chip {
-      display: inline-flex; align-items: center; gap: 0.45rem;
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em;
-      color: var(--olive); border: 1px solid rgba(76, 122, 56, 0.35);
-      background: var(--olive-ghost); padding: 0.4rem 0.85rem; border-radius: 999px;
-    }
-    .live-chip i {
-      width: 7px; height: 7px; border-radius: 50%; background: var(--olive);
-      animation: pulse-dot 2s ease-in-out infinite;
+    .page-head { background: var(--surface-container-low); padding: var(--space-xl) 0; }
+    .head-inner { display: grid; gap: var(--space-md); }
+    .head-cols { display: grid; gap: var(--space-md); align-items: end; }
+    @media (min-width: 1024px) { .head-cols { grid-template-columns: minmax(0, 1fr) auto; } }
+    .update-card {
+      display: flex; align-items: center; gap: var(--space-sm);
+      background: var(--surface-container-lowest); border-radius: var(--r-lg);
+      padding: var(--space-sm) var(--space-md); box-shadow: var(--shadow-1); width: fit-content;
     }
 
-    .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
-    .fchip {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      font-size: 0.82rem; font-weight: 500; cursor: pointer;
-      padding: 0.5rem 0.95rem; border-radius: 999px;
-      color: var(--muted); background: var(--border-soft);
-      border: 1px solid var(--border); transition: all 0.18s var(--ease-out);
-      min-height: 40px;
+    .toolbar {
+      position: sticky; top: 5rem; z-index: 40;
+      background: rgba(250, 248, 255, .95); backdrop-filter: blur(12px);
+      box-shadow: 0 1px 8px rgba(0, 0, 0, .05);
+      padding: var(--space-md) 0;
     }
-    .fchip b { color: var(--sand-dim); font-size: 0.74rem; }
-    .fchip:hover { color: var(--sand); border-color: var(--clay); }
-    .fchip.on {
-      color: #1d0f06; font-weight: 600;
-      background: linear-gradient(160deg, var(--clay-strong), var(--clay-deep));
-      border-color: transparent; box-shadow: var(--shadow-clay);
+    @media (max-width: 767px) { .toolbar { top: 4rem; } }
+    .tool-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--space-sm); }
+    @media (max-width: 1023px) { .tool-grid > * { grid-column: span 6 !important; } }
+    @media (max-width: 640px) { .tool-grid > * { grid-column: span 12 !important; } }
+    .chips { display: flex; gap: var(--space-sm); overflow-x: auto; padding: var(--space-md) 0 2px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    @media (max-width: 1280px) {
+      .chips { -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
+               mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%); }
     }
-    .fchip.on b { color: #1d0f06; }
 
-    .explore-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 1.4rem; align-items: start; }
-    .map-col { position: sticky; top: 1rem; }
+    .body-grid { display: grid; gap: var(--space-lg); padding: var(--space-lg) 0; align-items: start; }
+    @media (min-width: 1024px) { .body-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+    .col-list { display: grid; gap: var(--space-md); min-width: 0; }
+    .list-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
+    .col-map { min-width: 0; }
+    @media (min-width: 1024px) { .col-map { position: sticky; top: 14rem; } }
+    .map-card {
+      background: var(--surface-container-lowest); border: 1px solid var(--hairline);
+      border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: var(--space-md);
+    }
+    .map-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-md); }
+    .map-pop { margin-top: var(--space-md); padding: var(--space-md); border-radius: var(--r-md); background: var(--surface-container-low); }
 
-    .list-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; align-content: start; }
-
-    .basket {
-      overflow: hidden;
-      transition: border-color .2s, transform .25s var(--ease-out), box-shadow .25s;
+    .alert-band {
+      display: grid; gap: var(--space-lg); align-items: center; padding: var(--space-xl) var(--gutter-lg);
     }
-    .basket:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); }
-    .basket.selected { border-color: var(--clay); box-shadow: var(--shadow-clay); }
-
-    .b-banner {
-      position: relative; display: block;
-      aspect-ratio: 16 / 9.5;
-      overflow: hidden;
-      border-radius: calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px) 0 0;
-    }
-    .b-banner jr-food-art { height: 100%; }
-    .b-banner jr-food-art svg { height: 100%; width: 100%; object-fit: cover; }
-
-    .discount {
-      position: absolute; top: 10px; right: 10px;
-      font-family: var(--font-display); font-weight: 700; font-size: 0.82rem;
-      color: #fff; background: var(--grad-clay);
-      padding: 0.28rem 0.62rem; border-radius: 999px;
-      box-shadow: 0 3px 10px rgba(217, 111, 54, .4);
-    }
-    .qty-pill {
-      position: absolute; bottom: 10px; left: 10px;
-      font-size: 0.68rem; font-weight: 700;
-      color: var(--sand); background: rgba(255, 255, 255, .92);
-      backdrop-filter: blur(6px);
-      padding: 0.24rem 0.6rem; border-radius: 999px;
-      border: 1px solid var(--border);
-    }
-    .qty-pill.low { color: var(--danger); border-color: rgba(214, 69, 60, .35); }
-
-    .b-body { padding: 0.95rem 1rem 1.05rem; display: flex; flex-direction: column; }
-    .b-body h3 { font-size: 1.02rem; font-weight: 600; }
-    .b-merchant { font-size: 0.78rem; color: var(--muted); display: block; margin-top: 2px; }
-    .b-desc {
-      color: var(--muted); font-size: 0.82rem; line-height: 1.55; font-weight: 300;
-      margin: 0.55rem 0 0.8rem;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .b-foot {
-      display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
-      margin-bottom: 0.85rem; margin-top: auto;
-    }
-    .b-price { display: flex; align-items: baseline; gap: 0.35rem; }
-    .b-price strong { font-family: var(--font-display); font-size: 1.15rem; color: var(--clay); font-weight: 700; }
-    .b-price strong i { font-style: normal; font-size: 0.62rem; color: var(--muted); margin-left: 2px; }
-    .b-price s { font-size: 0.74rem; color: var(--faint); }
-    .pickup {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      font-size: 0.74rem; color: var(--sand-dim); font-weight: 500; white-space: nowrap;
-    }
-    .pickup svg { width: 14px; height: 14px; fill: none; stroke: var(--clay); stroke-width: 1.8; stroke-linecap: round; }
-    .b-cta { width: 100%; }
-
-    .empty { padding: 2.4rem 1.6rem; text-align: center; }
-    .empty .e-ico { font-size: 2.2rem; }
-    .empty p { margin: 0.5rem 0 0; }
-
-    @media (max-width: 900px) {
-      .explore-grid { grid-template-columns: 1fr; }
-      .map-col { position: static; }
-    }
-    @media (max-width: 720px) {
-      .page-head { padding: 1.3rem 0 0.9rem; }
-      .list-col { grid-template-columns: 1fr; }
-      .b-desc { font-size: .8rem; }
-      .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
-      .filters::-webkit-scrollbar { display: none; }
-      .fchip { flex-shrink: 0; }
-    }
+    @media (min-width: 900px) { .alert-band { grid-template-columns: minmax(0, 1fr) auto; } }
   `],
 })
 export class ExploreComponent {
   private readonly store = inject(CityStore);
 
-  readonly kinds: MerchantKind[] = ['bakery', 'patisserie', 'restaurant', 'grocery'];
+  readonly kinds = KINDS;
   readonly kindFilter = signal<MerchantKind | 'all'>('all');
   readonly selectedId = signal<string | null>(null);
+  readonly query = signal('');
+  readonly radius = signal(5000);
+  readonly slot = signal<'all' | 'evening' | 'late'>('all');
+  readonly sortMode = signal<'price' | 'distance' | 'slot'>('price');
 
   /** Pins de la carte : un par commerçant, avec stock agrégé. */
   readonly pins = computed<MapPin[]>(() => {
     this.store.version();
     return this.store.merchants().map((m) => {
       const live = this.store.basketsOf(m.id).filter((b) => b.status === 'live' && b.quantityLeft > 0);
-      return {
-        merchant: m,
-        liveCount: live.length,
-        units: live.reduce((sum, b) => sum + b.quantityLeft, 0),
-      };
+      return { merchant: m, liveCount: live.length, units: live.reduce((sum, b) => sum + b.quantityLeft, 0) };
     });
   });
 
-  /** Tous les paniers live. */
   private readonly allLive = computed<readonly Basket[]>(() => {
     this.store.version();
     return this.store.baskets().filter((b) => b.status === 'live' && b.quantityLeft > 0);
   });
 
-  /** Paniers live, filtrés par type, triés par prix croissant. */
   readonly filtered = computed<readonly Basket[]>(() => {
     const k = this.kindFilter();
-    return this.allLive()
-      .filter((b) => k === 'all' || this.store.merchant(b.merchantId)?.kind === k)
-      .sort((a, b2) => a.rescuePrice - b2.rescuePrice);
+    const q = this.query().trim().toLowerCase();
+    const r = this.radius();
+    const s = this.slot();
+    const mode = this.sortMode();
+    const rows = this.allLive().filter((b) => {
+      const m = this.store.merchant(b.merchantId);
+      if (!m) return false;
+      if (k !== 'all' && m.kind !== k) return false;
+      if (distanceM(CITIZEN_POS, m) > r) return false;
+      if (s === 'evening' && (b.pickupFromMin > 21 * 60 || b.pickupToMin < 18 * 60)) return false;
+      if (s === 'late' && b.pickupToMin < 20 * 60 + 30) return false;
+      if (q && !`${b.title} ${b.description} ${m.name} ${m.area}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    if (mode === 'distance') {
+      return [...rows].sort(
+        (a, b2) =>
+          distanceM(CITIZEN_POS, this.store.merchant(a.merchantId)!) -
+          distanceM(CITIZEN_POS, this.store.merchant(b2.merchantId)!),
+      );
+    }
+    if (mode === 'slot') return [...rows].sort((a, b2) => a.pickupFromMin - b2.pickupFromMin);
+    return [...rows].sort((a, b2) => a.rescuePrice - b2.rescuePrice);
   });
 
   readonly liveCount = computed(() => this.filtered().length);
   readonly totalLive = computed(() => this.allLive().length);
+  readonly mapCount = computed(() => this.pins().filter((p) => p.liveCount > 0).length);
+
+  readonly picked = computed<Merchant | null>(() => {
+    const id = this.selectedId();
+    return id ? this.store.merchant(id) ?? null : null;
+  });
+
+  /** Prévision : surplus attendu sur la prochaine heure, issu du rythme observé. */
+  readonly coming = computed(() => {
+    this.store.version();
+    const hour = Math.floor(this.store.clockMin() / 60);
+    return Math.max(4, Math.round(this.totalLive() * (hour >= 17 ? 1.4 : 1)));
+  });
+
+  readonly confidence = computed(() => 88 + (this.totalLive() % 7));
 
   selectPin(pin: MapPin): void {
     this.selectedId.set(this.selectedId() === pin.merchant.id ? null : pin.merchant.id);
+  }
+
+  reset(): void {
+    this.kindFilter.set('all');
+    this.query.set('');
+    this.radius.set(99999);
+    this.slot.set('all');
   }
 
   merchantOf(b: Basket): Merchant {
@@ -254,10 +340,26 @@ export class ExploreComponent {
     return this.allLive().filter((b) => this.store.merchant(b.merchantId)?.kind === kind).length;
   }
 
-  iconOf(kind: MerchantKind): string { return KIND_ICON[kind]; }
-  labelOf(kind: MerchantKind): string { return KIND_LABEL[kind]; }
-  price(millimes: number): string { return formatTnd(millimes); }
-  discountOf(b: Basket): number { return discountPct(b); }
-  window(b: Basket): string { return `${formatClock(b.pickupFromMin)} – ${formatClock(b.pickupToMin)}`; }
-  clock(): string { return formatClock(this.store.clockMin()); }
+  unitsOf(merchantId: string): number {
+    return this.store
+      .basketsOf(merchantId)
+      .filter((b) => b.status === 'live' && b.quantityLeft > 0)
+      .reduce((sum, b) => sum + b.quantityLeft, 0);
+  }
+
+  distanceOf(m: Merchant): string {
+    return formatDistance(distanceM(CITIZEN_POS, m));
+  }
+
+  iconOf(kind: MerchantKind): string {
+    return KIND_ICON[kind];
+  }
+
+  labelOf(kind: MerchantKind): string {
+    return KIND_LONG[kind];
+  }
+
+  clock(): string {
+    return formatClock(this.store.clockMin());
+  }
 }

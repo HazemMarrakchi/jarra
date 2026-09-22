@@ -1,175 +1,193 @@
-﻿import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CityStore } from '../core/city.store';
-import { FoodArtComponent } from '../core/food-art.component';
-import {
-  KIND_ICON, KIND_LABEL, Order, discountPct, formatClock, formatTnd,
-} from '../core/model';
+import { Order, discountPct, formatClock, formatTnd } from '../core/model';
+import { PHOTOS } from '../core/photos';
 
 @Component({
   selector: 'jr-basket',
   standalone: true,
-  imports: [RouterLink, FormsModule, FoodArtComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink, FormsModule],
   template: `
-    <div class="shell narrow">
+    <div class="shell-lg">
+      <nav class="crumbs" aria-label="Fil d'ariane">
+        <a routerLink="/explorer">Explorer &amp; Carte Live</a>
+        <span class="ms ms-18 muted">chevron_right</span>
+        <a [routerLink]="['/boutique', merchantId()]">{{ merchantName() || 'Boutique' }}</a>
+        <span class="ms ms-18 muted">chevron_right</span>
+        <span class="muted">Réservation</span>
+      </nav>
+
       @if (basket(); as b) {
-        <a class="back" routerLink="/explorer">← Retour à la carte</a>
+        <div class="order">
+          <!-- ── Colonne principale ─────────────────────────────────── -->
+          <div class="stack gap-lg">
+            <div>
+              <span class="eco-badge"><span class="ms" style="font-size:15px">storefront</span>{{ kindLabel() }}</span>
+              <h1 style="margin-top:var(--space-sm)">{{ b.title }}</h1>
+              <p class="body-lg muted" style="margin-top:var(--space-sm);max-width:44rem">{{ b.description }}</p>
+            </div>
 
-        @if (!order()) {
-          <article class="card sheet rise">
-            <jr-food-art [kind]="merchant()?.kind ?? 'bakery'" class="hero-art" />
-            <header class="sheet-head">
-              <span class="kind-ico">{{ iconOf() }}</span>
-              <div>
-                <span class="kind">{{ kindLabel() }}</span>
-                <h1>{{ b.title }}</h1>
-                <span class="merchant-line">
-                  {{ merchantName() }} · {{ merchantArea() }}
-                  @if (merchantVerified()) { <span class="verified">✓ vérifié</span> }
-                </span>
-              </div>
-            </header>
+            <figure class="media">
+              <img [src]="photo()" width="800" height="600" [attr.alt]="'Invendus chez ' + merchantName()" />
+              <span class="discount-chip">-{{ discountOf() }}%</span>
+              <span class="window-chip"><span class="ms" style="font-size:14px">schedule</span>{{ windowOf(b) }}</span>
+            </figure>
 
-            <p class="desc">{{ b.description }}</p>
-
-            <div class="price-band">
-              <div class="p-col">
-                <span class="p-label">Prix Jarra</span>
-                <strong class="p-rescue">{{ price(b.rescuePrice) }} <small>TND</small></strong>
+            <div class="facts-grid">
+              <div class="card card-pad stack gap-xs">
+                <span class="ms ms-24" style="color:var(--brand-mint-ink)">point_of_sale</span>
+                <b class="label-lg">Paiement au comptoir</b>
+                <p class="body-sm muted">Espèces ou TPE local, directement à l'artisan. Aucun prélèvement en ligne.</p>
               </div>
-              <div class="p-col dim">
-                <span class="p-label">Prix d'origine</span>
-                <s>{{ price(b.originalPrice) }} TND</s>
+              <div class="card card-pad stack gap-xs">
+                <span class="ms ms-24" style="color:var(--brand-mint-ink)">qr_code_2</span>
+                <b class="label-lg">Code de retrait</b>
+                <p class="body-sm muted">Un code court à 4 caractères, à présenter au comptoir pendant le créneau.</p>
               </div>
-              <div class="p-col save">
-                <span class="p-label">Vous économisez</span>
-                <strong>−{{ discountOf() }}%</strong>
+              <div class="card card-pad stack gap-xs">
+                <span class="ms ms-24" style="color:var(--brand-mint-ink)">eco</span>
+                <b class="label-lg">Impact mesuré</b>
+                <p class="body-sm muted">Environ {{ co2() }} kg de CO₂ évités et un repas qui ne part pas à la poubelle.</p>
               </div>
             </div>
 
-            <div class="facts">
-              <div class="fact"><span>🕐 Retrait</span><strong>{{ windowOf(b) }}</strong></div>
-              <div class="fact">
-                <span>📦 Disponibles</span>
-                <strong [class.low]="b.quantityLeft <= 2">{{ b.quantityLeft }} panier{{ b.quantityLeft > 1 ? 's' : '' }}</strong>
+            <div class="card card-pad">
+              <h2 class="headline-sm">Réserver ce panier</h2>
+              <p class="body-sm muted" style="margin-top:4px">
+                Aucun paiement en ligne. Vous réglez au comptoir, sur place, au moment du retrait.
+              </p>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="bkName">Nom sur la réservation</label>
+                  <input id="bkName" class="input" name="customerName" [(ngModel)]="customerName" placeholder="Ex. Amine B." autocomplete="name" />
+                  <span class="hint">Annoncez ce nom au comptoir, avec votre code.</span>
+                </div>
+                <div class="field">
+                  <label for="bkQty">Nombre de paniers</label>
+                  <div class="row gap-sm">
+                    <span class="stepper">
+                      <button type="button" aria-label="Diminuer" (click)="setQty(qty() - 1)"><span class="ms ms-20">remove</span></button>
+                      <label class="sr" for="bkQty">Quantité</label>
+                      <input id="bkQty" [value]="qty()" readonly />
+                      <button type="button" aria-label="Augmenter" (click)="setQty(qty() + 1)"><span class="ms ms-20">add</span></button>
+                    </span>
+                    <span class="hint">Maximum {{ maxQty(b) }} par personne sur ce créneau.</span>
+                  </div>
+                </div>
               </div>
-              <div class="fact"><span>⭐ Note</span><strong>{{ merchantRating() }}/5 ({{ merchantRatingCount() }} avis)</strong></div>
-            </div>
 
-            <div class="reserve-box">
-              <div class="field">
-                <label for="name">Votre prénom (pour le retrait)</label>
-                <input id="name" name="name" [(ngModel)]="customerName" placeholder="ex. Yasmine" autocomplete="given-name" />
-              </div>
-              <button
-                class="btn btn-primary reserve-btn"
-                [disabled]="!customerName.trim() || b.quantityLeft <= 0"
-                (click)="reserve()"
-              >
-                🧺 Réserver — {{ price(b.rescuePrice) }} TND à payer sur place
+              <button class="btn btn-urgent btn-lg" type="button" style="margin-top:var(--space-md)" [disabled]="!customerName.trim() || !!order()" (click)="reserve()">
+                <span class="ms ms-18">flash_on</span>Confirmer la réservation
               </button>
-              <p class="note">Paiement à la collecte, en espèces. Annulation gratuite avant le retrait.</p>
+              @if (!customerName.trim() && !order()) {
+                <p class="hint" style="margin-top:var(--space-sm)">Indiquez votre nom pour activer la réservation.</p>
+              }
             </div>
-          </article>
-        } @else {
-          <article class="card confirm rise">
-            <span class="c-ico">🎉</span>
-            <h1>Panier réservé !</h1>
-            <p class="c-sub">
-              Présentez ce code à <strong>{{ merchantName() }}</strong> entre {{ windowOf(b) }}.
-            </p>
-            <div class="code" aria-label="Code de retrait">{{ order()!.pickupCode }}</div>
-            <div class="c-meta">
-              <span>{{ b.title }}</span>
-              <span>{{ price(b.rescuePrice) }} TND · {{ merchantArea() }}</span>
+          </div>
+
+          <!-- ── Colonne récapitulatif ──────────────────────────────── -->
+          <div class="stack gap-md sticky-side">
+            <div class="ticket">
+              <div class="card-pad stack gap-sm">
+                <div class="row between">
+                  <span class="label-sm muted" style="text-transform:uppercase">Récapitulatif</span>
+                  @if (order()) {
+                    <span class="pill pill-forest">Réservé</span>
+                  } @else {
+                    <span class="pill pill-mint">En attente</span>
+                  }
+                </div>
+                <div class="rows">
+                  <div><span class="muted">Panier</span><span class="mono-num">{{ price(b.rescuePrice) }} DT</span></div>
+                  <div><span class="muted">Quantité</span><span class="mono-num">{{ qty() }}</span></div>
+                  <div><span class="muted">Frais de service</span><span class="mono-num">0,000 DT</span></div>
+                  <div class="total"><span>À régler au comptoir</span><span class="price-now">{{ price(b.rescuePrice * qty()) }} <small>DT</small></span></div>
+                </div>
+                <div class="card-flat" style="padding:var(--space-sm) var(--space-md)">
+                  <span class="label-sm muted" style="text-transform:uppercase">Créneau de retrait</span>
+                  <p class="label-lg mono-num" style="margin-top:2px">Aujourd'hui · {{ windowOf(b) }}</p>
+                </div>
+              </div>
+
+              @if (order(); as o) {
+                <div class="ticket-code">
+                  <span class="label-sm" style="color:#a9c6b8">Code à présenter au comptoir</span>
+                  <b class="mono-num">{{ o.pickupCode }}</b>
+                  <span class="body-sm" style="color:#d6e7de">{{ merchantName() }} · {{ merchantArea() }}, Gabès</span>
+                  <button class="btn btn-invert btn-sm" type="button" (click)="cancelOrder()">Annuler la réservation</button>
+                </div>
+              }
             </div>
-            <div class="c-actions">
-              <button class="btn btn-ghost" (click)="cancelOrder()">Annuler la réservation</button>
-              <a class="btn btn-primary" routerLink="/explorer">Réserver un autre panier</a>
+
+            <div class="ai-banner">
+              <span class="ai-ico"><span class="ms ms-24">schedule</span></span>
+              <div>
+                <b class="label-lg">Préparer votre retrait</b>
+                <ul class="tips">
+                  <li>Prévoyez de quoi transporter le panier.</li>
+                  <li>Présentez-vous dans la fenêtre choisie, pas avant.</li>
+                  <li>Montrez votre code, puis réglez sur place.</li>
+                </ul>
+              </div>
             </div>
-            <p class="note">💡 Astuce : faites une capture d'écran du code.</p>
-          </article>
-        }
+
+            <div class="card card-pad stack gap-sm">
+              <span class="label-sm muted" style="text-transform:uppercase">Le commerce</span>
+              <b class="label-lg">{{ merchantName() }}</b>
+              <p class="body-sm muted">{{ kindLabel() }} · {{ merchantArea() }}, Gabès</p>
+              <div class="row gap-sm wrap">
+                @if (merchantVerified()) {
+                  <span class="eco-badge"><span class="ms" style="font-size:14px">verified_user</span>Vérifié</span>
+                }
+                <span class="eco-badge"><span class="ms ms-fill" style="font-size:14px">star</span>{{ merchantRating() }} / 5</span>
+              </div>
+              <a class="btn btn-ghost btn-sm" [routerLink]="['/boutique', merchantId()]">
+                <span class="ms ms-18">storefront</span>Voir la boutique
+              </a>
+            </div>
+          </div>
+        </div>
       } @else {
-        <article class="card sheet gone rise">
-          <span class="c-ico">⌛</span>
-          <h1>Ce panier a été sauvé… par quelqu'un d'autre</h1>
-          <p class="c-sub">Il est épuisé ou son créneau de retrait est terminé. La ville bouge vite !</p>
-          <a class="btn btn-primary" routerLink="/explorer">Voir les paniers encore disponibles</a>
-        </article>
+        <div class="empty" style="margin:var(--space-xl) 0">
+          <span class="ms ms-40">error_outline</span>
+          <b>Ce panier n'est plus disponible</b>
+          <span class="body-sm">Il a été entièrement réservé ou son créneau de retrait est terminé — l'inventaire ne ment jamais.</span>
+          <a class="btn btn-primary" routerLink="/explorer"><span class="ms ms-18">map</span>Voir les paniers disponibles</a>
+        </div>
       }
     </div>
   `,
   styles: [`
-    .narrow { max-width: 640px; }
-    .back { display: inline-block; margin: 1.4rem 0 1rem; color: var(--muted); font-size: 0.88rem; transition: color 0.15s; }
-    .back:hover { color: var(--sand); }
+    .crumbs { display: flex; align-items: center; gap: 6px; padding: var(--space-md) 0 var(--space-sm); font-size: 0.8125rem; color: var(--on-surface-variant); }
+    .crumbs a:hover { color: var(--primary-container); }
+    .order { display: grid; gap: var(--space-lg); align-items: start; padding-bottom: var(--space-xl); }
+    @media (min-width: 1024px) { .order { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+    .order > div { min-width: 0; }
+    @media (min-width: 1024px) { .sticky-side { position: sticky; top: 13rem; } }
 
-    .sheet { padding: 1.6rem; }
-    .hero-art {
-      margin: -1.6rem -1.6rem 1.2rem;
-      border-radius: var(--r-lg) var(--r-lg) 0 0;
-      overflow: hidden;
-    }
-    .sheet-head { display: flex; gap: 0.9rem; align-items: flex-start; }
-    .kind-ico { font-size: 2rem; line-height: 1.1; }
-    .kind { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clay-strong); }
-    .sheet-head h1 { font-size: 1.5rem; margin: 0.15rem 0 0.3rem; }
-    .merchant-line { font-size: 0.85rem; color: var(--muted); }
-    .verified { color: var(--olive); font-weight: 600; font-size: 0.76rem; margin-left: 0.4rem; }
-    .desc { color: var(--sand-dim); line-height: 1.65; margin: 1.1rem 0; font-weight: 300; }
+    .media { position: relative; margin: 0; border-radius: var(--r-lg); overflow: hidden; aspect-ratio: 16 / 9; background: var(--surface-container); box-shadow: var(--shadow-1); }
+    .media img { width: 100%; height: 100%; object-fit: cover; }
 
-    .price-band {
-      display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 0.8rem;
-      padding: 1rem; border-radius: var(--r-md);
-      background: var(--bg-raised); border: 1px solid var(--border-soft);
-      margin-bottom: 1rem;
-    }
-    .p-col { display: flex; flex-direction: column; gap: 3px; }
-    .p-label { font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
-    .p-rescue { font-family: var(--font-display); font-size: 1.7rem; color: var(--clay-strong); }
-    .p-rescue small { font-size: 0.7rem; }
-    .p-col.dim s { color: var(--faint); font-size: 1.05rem; }
-    .p-col.save strong { color: var(--olive); font-size: 1.25rem; font-family: var(--font-display); }
+    .facts-grid { display: grid; gap: var(--space-md); }
+    @media (min-width: 700px) { .facts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1.3rem; }
-    .fact { display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; padding: 0.7rem 0.8rem; border-radius: var(--r-sm); background: var(--border-soft); }
-    .fact span { color: var(--faint); font-size: 0.72rem; }
-    .fact strong { color: var(--sand); font-weight: 600; }
-    .fact strong.low { color: var(--danger); }
+    .form-grid { display: grid; gap: var(--space-md); margin-top: var(--space-md); }
+    @media (min-width: 700px) { .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-    .reserve-box { display: grid; gap: 0.9rem; }
-    .reserve-btn { width: 100%; font-size: 1rem; padding: 0.95rem; }
-    .note { color: var(--faint); font-size: 0.78rem; text-align: center; margin: 0; }
-
-    .confirm { padding: 2.2rem 1.6rem; text-align: center; }
-    .c-ico { font-size: 2.6rem; }
-    .confirm h1 { font-size: 1.7rem; margin: 0.7rem 0 0.4rem; }
-    .c-sub { color: var(--muted); font-weight: 300; margin: 0 0 1.4rem; }
-    .c-sub strong { color: var(--sand); }
-    .code {
-      font-family: var(--font-mono); font-size: 2.6rem; font-weight: 700;
-      letter-spacing: 0.35em; color: var(--clay-strong);
-      background: var(--bg-raised); border: 1px dashed rgba(232, 129, 79, 0.5);
-      border-radius: var(--r-md); padding: 0.9rem 0.35em 0.9rem 0.7em;
-      margin: 0 auto 1rem; max-width: 320px;
-    }
-    .c-meta { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: 0.86rem; margin-bottom: 1.5rem; }
-    .c-actions { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
-
-    .gone { padding: 2.2rem 1.6rem; text-align: center; }
-    .gone h1 { font-size: 1.4rem; margin: 0.7rem 0 0.5rem; }
-    .gone .btn { margin-top: 1.2rem; }
-
-    @media (max-width: 720px) {
-      .sheet { padding: 1.2rem; }
-      .price-band { grid-template-columns: 1fr 1fr; }
-      .p-col.save { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: baseline; }
-      .facts { grid-template-columns: 1fr; }
-      .code { font-size: 2rem; }
-      .c-actions .btn { width: 100%; }
-    }
+    .ticket { background: var(--surface-container-lowest); border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-1); }
+    .rows { display: grid; }
+    .rows > div { display: flex; justify-content: space-between; gap: var(--space-md); padding: .65rem 0; border-bottom: 1px solid var(--hairline); font-size: 0.875rem; }
+    .rows > div:last-child { border-bottom: 0; }
+    .rows .total { padding-top: var(--space-md); }
+    .rows .total span:first-child { font-weight: 700; }
+    .ticket-code { background: var(--primary-container); color: var(--on-primary); padding: var(--space-lg); display: grid; gap: var(--space-sm); justify-items: center; text-align: center; }
+    .ticket-code b { font-size: 2.5rem; letter-spacing: .24em; line-height: 1; }
+    .tips { display: grid; gap: 6px; margin-top: var(--space-sm); font-size: 0.8125rem; color: var(--on-surface-variant); }
+    .tips li { padding-left: 1rem; position: relative; }
+    .tips li::before { content: ''; position: absolute; left: 0; top: .5em; width: 5px; height: 5px; border-radius: 50%; background: var(--brand-mint); }
   `],
 })
 export class BasketComponent {
@@ -178,8 +196,8 @@ export class BasketComponent {
 
   customerName = '';
   readonly order = signal<Order | null>(null);
+  readonly qty = signal(1);
 
-  /** Le panier courant — null s'il a été épuisé ou si son créneau est passé. */
   readonly basket = computed(() => {
     this.store.version();
     const id = this.route.snapshot.paramMap.get('id');
@@ -192,19 +210,57 @@ export class BasketComponent {
     return b ? this.store.merchant(b.merchantId) : undefined;
   }
 
-  iconOf(): string { return KIND_ICON[this.merchant()?.kind ?? 'bakery']; }
-  kindLabel(): string { return KIND_LABEL[this.merchant()?.kind ?? 'bakery']; }
-  merchantName(): string { return this.merchant()?.name ?? ''; }
-  merchantArea(): string { return this.merchant()?.area ?? ''; }
-  merchantVerified(): boolean { return this.merchant()?.verified ?? false; }
-  merchantRating(): number { return this.merchant()?.rating ?? 0; }
-  merchantRatingCount(): number { return this.merchant()?.ratingCount ?? 0; }
+  merchantId(): string {
+    return this.merchant()?.id ?? '';
+  }
 
-  price(millimes: number): string { return formatTnd(millimes); }
+  kindLabel(): string {
+    const k = this.merchant()?.kind ?? 'bakery';
+    return { bakery: 'Boulangerie', patisserie: 'Pâtisserie', restaurant: 'Restaurant', grocery: 'Épicerie' }[k];
+  }
+
+  merchantName(): string {
+    return this.merchant()?.name ?? '';
+  }
+
+  merchantArea(): string {
+    return this.merchant()?.area ?? '';
+  }
+
+  merchantVerified(): boolean {
+    return this.merchant()?.verified ?? false;
+  }
+
+  merchantRating(): number {
+    return this.merchant()?.rating ?? 0;
+  }
+
+  photo(): string {
+    const k = this.merchant()?.kind ?? 'bakery';
+    return k === 'patisserie' ? PHOTOS.patisserie : k === 'restaurant' ? PHOTOS.traiteur : k === 'grocery' ? PHOTOS.primeur : PHOTOS.boulangerie;
+  }
+
+  co2(): string {
+    return (2.4).toFixed(1).replace('.', ',');
+  }
+
+  price(millimes: number): string {
+    return formatTnd(millimes);
+  }
 
   discountOf(): number {
     const b = this.basket();
     return b ? discountPct(b) : 0;
+  }
+
+  maxQty(b: { quantityLeft: number }): number {
+    return Math.max(1, Math.min(3, b.quantityLeft));
+  }
+
+  setQty(v: number): void {
+    const b = this.basket();
+    const max = b ? this.maxQty(b) : 1;
+    this.qty.set(Math.max(1, Math.min(max, v)));
   }
 
   windowOf(b: { pickupFromMin: number; pickupToMin: number }): string {
