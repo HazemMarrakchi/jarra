@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════════
 // JARRA — Section admin (pilote)
 // Réservée aux numéros listés dans la table `admins` (migration-admin.sql).
-// Connexion par OTP téléphone (même mécanisme que l'espace commerçant),
-// puis vérification côté base via la RPC is_admin().
+// La session OTP est globale (page /connexion, verrou authGuard) ; ici on
+// vérifie uniquement les droits côté base via la RPC is_admin().
 // ═══════════════════════════════════════════════════════════════════
 
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -32,40 +32,12 @@ import { KIND_ICON } from '../core/ui';
         <div class="card card-pad">
           <p class="body-md">La section admin n'est disponible qu'en mode connecté (Supabase).</p>
         </div>
-      } @else if (!auth()) {
-        <!-- ── Connexion OTP ─────────────────────────────────────────── -->
+      } @else if (!adminChecked()) {
+        <!-- ── Vérification des droits (session déjà ouverte via /connexion) ── -->
         <div class="card card-pad" style="max-width:32rem">
-          <h2 class="headline-sm">Connexion administrateur</h2>
-          <p class="body-sm muted" style="margin:var(--space-sm) 0 var(--space-md)">
-            Un code à 6 chiffres est envoyé par SMS au numéro autorisé.
-          </p>
-          <div class="field">
-            <label for="admPhone">Numéro de téléphone</label>
-            <input id="admPhone" class="input" name="admPhone" [(ngModel)]="phoneInput" placeholder="+216…" />
-          </div>
-          @if (otpSent()) {
-            <div class="field" style="margin-top:var(--space-sm)">
-              <label for="admOtp">Code reçu par SMS</label>
-              <input id="admOtp" class="input" name="admOtp" [(ngModel)]="otpInput" inputmode="numeric" placeholder="123456" />
-            </div>
-          }
-          <div class="row gap-sm" style="margin-top:var(--space-md)">
-            @if (!otpSent()) {
-              <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="requestCode()">
-                <span class="ms ms-18">sms</span>Recevoir le code
-              </button>
-            } @else {
-              <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="verifyCode()">
-                <span class="ms ms-18">lock_open</span>Valider le code
-              </button>
-              <button class="btn btn-ghost" type="button" [disabled]="busy()" (click)="otpSent.set(false)">Renvoyer</button>
-            }
-          </div>
-          @if (authMsg(); as msg) {
-            <p class="body-sm" role="status" [style.color]="authOk() ? 'var(--brand-mint-ink)' : 'var(--urgent)'" style="margin-top:var(--space-sm)">{{ msg }}</p>
-          }
+          <p class="body-md"><span class="ms ms-18">hourglass_top</span> Vérification des droits…</p>
         </div>
-      } @else if (adminChecked() && !isAdmin()) {
+      } @else if (!isAdmin()) {
         <!-- ── Numéro non autorisé ────────────────────────────────────── -->
         <div class="card card-pad" style="max-width:32rem">
           <h2 class="headline-sm">Numéro non autorisé</h2>
@@ -73,15 +45,11 @@ import { KIND_ICON } from '../core/ui';
             {{ auth()?.phone }} n'est pas dans la liste des administrateurs. Ajoutez-le via SQL :
             <code>insert into public.admins (phone) values ('{{ auth()?.phone }}');</code>
           </p>
-          <button class="btn btn-ghost btn-sm" type="button" style="margin-top:var(--space-md)" (click)="logout()">
-            <span class="ms ms-18">logout</span>Se déconnecter
-          </button>
         </div>
       } @else if (isAdmin()) {
         <!-- ── Tableau de bord pilote ─────────────────────────────────── -->
         <div class="row between wrap gap-sm">
           <span class="pill pill-eco"><span class="ms" style="font-size:14px">verified_user</span>Connecté : {{ auth()?.phone }}</span>
-          <button class="btn btn-ghost btn-sm" type="button" (click)="logout()"><span class="ms ms-18">logout</span>Quitter</button>
         </div>
 
         <div class="strip">
@@ -198,12 +166,6 @@ export class AdminComponent {
   readonly store = inject(CityStore);
   readonly auth = this.store.merchantAuth;
 
-  // ── Connexion OTP ─────────────────────────────────────────────────
-  phoneInput = '+216';
-  otpInput = '';
-  readonly otpSent = signal(false);
-  readonly authMsg = signal<string | null>(null);
-  readonly authOk = signal(false);
   readonly busy = signal(false);
 
   // ── Droits admin ──────────────────────────────────────────────────
@@ -253,54 +215,6 @@ export class AdminComponent {
   activeOf(merchantId: string): number {
     this.store.version();
     return this.store.basketsOf(merchantId).filter((b) => b.status === 'live' && b.quantityLeft > 0).length;
-  }
-
-  // ── Auth ───────────────────────────────────────────────────────────
-
-  async requestCode(): Promise<void> {
-    const phone = this.normalizedPhone();
-    if (!phone) {
-      this.authOk.set(false);
-      this.authMsg.set('Format international attendu : « +216 » suivi du numéro, sans espaces.');
-      return;
-    }
-    this.busy.set(true);
-    try {
-      const ok = await this.store.requestOtp(phone);
-      this.otpSent.set(ok);
-      this.authOk.set(ok);
-      this.authMsg.set(ok ? `Code envoyé au ${phone}.` : 'Envoi impossible — vérifiez le numéro.');
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  async verifyCode(): Promise<void> {
-    const code = this.otpInput.trim();
-    const phone = this.normalizedPhone();
-    if (code.length < 4 || !phone || this.busy()) return;
-    this.busy.set(true);
-    try {
-      const auth = await this.store.verifyOtp(phone, code);
-      this.authOk.set(auth !== null);
-      if (auth) {
-        this.otpInput = '';
-        this.authMsg.set(null);
-        await this.checkAdmin();
-      } else {
-        this.authMsg.set('Code incorrect ou expiré — demandez-en un nouveau.');
-      }
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  async logout(): Promise<void> {
-    await this.store.signOut();
-    this.adminChecked.set(false);
-    this.isAdmin.set(false);
-    this.otpSent.set(false);
-    this.authMsg.set(null);
   }
 
   /** Vérifie que le numéro connecté est dans la table `admins`. */
@@ -372,9 +286,4 @@ export class AdminComponent {
     }
   }
 
-  /** Normalise en E.164 (« +216… », chiffres uniquement). Null si invalide. */
-  private normalizedPhone(): string | null {
-    const p = this.phoneInput.replace(/[\s.\-()]/g, '');
-    return /^\+\d{8,15}$/.test(p) ? p : null;
-  }
 }

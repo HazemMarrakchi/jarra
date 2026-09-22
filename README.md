@@ -170,6 +170,7 @@ La CI exécute les tests à chaque push avant tout déploiement.
 - [x] Page Impact publique avec compteurs live
 - [x] Provider Supabase : schéma SQL, RLS, RPC transactionnelles, temps réel — voir [supabase/README.md](supabase/README.md)
 - [x] Auth par téléphone OTP (commerçants) — étape 2
+- [x] Verrou global : `/connexion` est la porte d'entrée — aucune page accessible sans session OTP (citoyens, commerçants, admin)
 - [x] PIN unique par commerçant, QR de retrait, notifications push (Web Push) — étape 3
 - [x] Open-data de l'impact (export CSV public sur la page Impact)
 - [x] Section admin `/admin` : onboarding commerces, PIN, modération (droits en base)

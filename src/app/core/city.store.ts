@@ -53,8 +53,11 @@ export class CityStore implements OnDestroy {
   /** Version qui s'incrémente à chaque changement — pour les computed. */
   readonly version = signal(0);
 
-  /** Session commerçant connectée (OTP) — null en démo ou déconnecté. */
+  /** Session connectée (OTP téléphone) — null en démo ou déconnecté. */
   readonly merchantAuth = signal<MerchantAuth | null>(null);
+
+  /** Résolu quand la session initiale (localStorage) a été restaurée — utilisé par le authGuard. */
+  readonly authReady: Promise<MerchantAuth | null>;
 
   private timer = 0;
 
@@ -62,7 +65,11 @@ export class CityStore implements OnDestroy {
     // Le provider démo est prêt immédiatement (synchrone) ; le provider
     // live pousse son état via onChange une fois le chargement terminé.
     this.applySnapshot();
-    void this.provider.init(() => this.applySnapshot());
+    const initDone = Promise.resolve(this.provider.init(() => this.applySnapshot()));
+    this.authReady = initDone.then(
+      () => this.provider.auth?.() ?? null,
+      () => null,
+    );
     // En test (Jasmine) on ne démarre pas la boucle de temps.
     if (!isTestRun()) {
       this.timer = window.setInterval(

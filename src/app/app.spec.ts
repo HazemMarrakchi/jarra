@@ -7,6 +7,7 @@ import { LandingComponent } from './landing/landing.component';
 import { ExploreComponent } from './explore/explore.component';
 import { ImpactComponent } from './impact/impact.component';
 import { MerchantComponent } from './merchant/merchant.component';
+import { LoginComponent } from './auth/login.component';
 
 function setup(): void {
   TestBed.configureTestingModule({
@@ -216,5 +217,20 @@ describe('MerchantComponent (dashboard)', () => {
 
     expect(component.me()!.id).toBe('m05');
     expect(component.myBaskets().every((b) => b.merchantId === 'm05')).toBeTrue();
+  });
+});
+
+describe('LoginComponent (verrou global)', () => {
+  beforeEach(async () => {
+    setup();
+    await TestBed.configureTestingModule({ imports: [LoginComponent] }).compileComponents();
+  });
+
+  it('affiche la page de connexion — en démo, entrée libre sans SMS', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Connexion');
+    expect(text).toContain('démo');
   });
 });

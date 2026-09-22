@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CityStore } from './core/city.store';
 import { PushService } from './core/push.service';
 import { LivePillComponent } from './core/ticker.component';
@@ -36,14 +36,17 @@ import { LivePillComponent } from './core/ticker.component';
           <span class="brand-name">Jarra<i>.tn</i></span>
         </a>
 
-        <nav class="nav" aria-label="Navigation principale">
-          <a routerLink="/explorer" routerLinkActive="active">Explorer</a>
-          <a routerLink="/boutique" routerLinkActive="active">Boutiques</a>
-          <a routerLink="/impact" routerLinkActive="active">Impact</a>
-          <a routerLink="/commercant" routerLinkActive="active">Espace Commerçant</a>
-        </nav>
+        @if (!locked()) {
+          <nav class="nav" aria-label="Navigation principale">
+            <a routerLink="/explorer" routerLinkActive="active">Explorer</a>
+            <a routerLink="/boutique" routerLinkActive="active">Boutiques</a>
+            <a routerLink="/impact" routerLinkActive="active">Impact</a>
+            <a routerLink="/commercant" routerLinkActive="active">Espace Commerçant</a>
+          </nav>
+        }
 
         <div class="top-right">
+          @if (!locked()) {
           @if (push.available) {
             <button
               class="bell-btn"
@@ -69,6 +72,17 @@ import { LivePillComponent } from './core/ticker.component';
           <a class="btn btn-primary btn-sm top-cta" routerLink="/commercant">
             <span class="ms ms-18">bolt</span>Publier un invendu
           </a>
+          @if (phone(); as p) {
+            <button
+              class="btn btn-quiet btn-sm"
+              type="button"
+              [title]="'Déconnexion (' + p + ')'"
+              aria-label="Se déconnecter"
+              (click)="logout()"
+            >
+              <span class="ms ms-18">logout</span>
+            </button>
+          }
           <button
             class="btn btn-quiet btn-sm burger"
             type="button"
@@ -78,10 +92,11 @@ import { LivePillComponent } from './core/ticker.component';
           >
             <span class="ms ms-20">{{ menu ? 'close' : 'menu' }}</span>
           </button>
+          }
         </div>
       </div>
 
-      @if (menu) {
+      @if (menu && !locked()) {
         <div class="mobile-menu">
           <nav class="shell-lg" aria-label="Navigation mobile">
             <a routerLink="/explorer" (click)="menu = false">Explorer — carte en direct</a>
@@ -97,6 +112,7 @@ import { LivePillComponent } from './core/ticker.component';
       <router-outlet></router-outlet>
     </main>
 
+    @if (!locked()) {
     <nav class="tabbar" aria-label="Navigation mobile">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
         <span class="ms ms-24">home</span><span>Accueil</span>
@@ -111,6 +127,7 @@ import { LivePillComponent } from './core/ticker.component';
         <span class="ms ms-24">store</span><span>Commerçant</span>
       </a>
     </nav>
+    }
 
     <footer class="foot">
       <div class="shell-lg">
@@ -129,6 +146,7 @@ import { LivePillComponent } from './core/ticker.component';
             <p class="mono-num" style="color:var(--secondary);margin-top:8px">{{ impact().mealsSaved }} repas sauvés</p>
           </div>
 
+          @if (!locked()) {
           <div>
             <h4>Filières Gourmandes</h4>
             <a routerLink="/explorer">Boulangeries &amp; Tabounas</a>
@@ -150,6 +168,7 @@ import { LivePillComponent } from './core/ticker.component';
             <a routerLink="/admin">Administration pilote</a>
             <a href="https://github.com/HazemMarrakchi/jarra" target="_blank" rel="noopener">Code source</a>
           </div>
+          }
         </div>
         <div class="foot-bot">
           <span>© 2026 Jarra.tn — conçu et développé à Gabès, Tunisie</span>
@@ -192,7 +211,18 @@ import { LivePillComponent } from './core/ticker.component';
 })
 export class AppComponent {
   private readonly store = inject(CityStore);
+  private readonly router = inject(Router);
   readonly push = inject(PushService);
   readonly impact = this.store.impact;
   menu = false;
+
+  /** Verrou global : en mode live sans session, navigation et liens masqués. */
+  readonly locked = computed(() => this.store.mode === 'live' && !this.store.merchantAuth());
+  readonly phone = computed(() => this.store.merchantAuth()?.phone ?? null);
+
+  async logout(): Promise<void> {
+    await this.store.signOut();
+    this.menu = false;
+    await this.router.navigateByUrl('/connexion');
+  }
 }
