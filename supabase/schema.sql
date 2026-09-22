@@ -82,7 +82,7 @@ $$;
 
 -- ── RPC : réserver un panier (atomique — pas de surréservation) ────
 create or replace function public.reserve_basket(p_basket_id text, p_customer_name text)
-returns json language plpgsql security definer set search_path = public as $$
+returns json language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_basket baskets%rowtype;
   v_order  orders%rowtype;
@@ -115,7 +115,7 @@ end $$;
 
 -- ── RPC : annuler une réservation (quantité restituée) ─────────────
 create or replace function public.cancel_order(p_order_id text)
-returns boolean language plpgsql security definer set search_path = public as $$
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_order orders%rowtype;
 begin
@@ -139,7 +139,7 @@ end $$;
 
 -- ── RPC : valider un retrait au comptoir (le code est le secret) ───
 create or replace function public.collect_order(p_code text)
-returns json language plpgsql security definer set search_path = public as $$
+returns json language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_order orders%rowtype;
 begin
@@ -162,7 +162,7 @@ end $$;
 create or replace function public.publish_basket(
   p_merchant_id text, p_pin text, p_title text, p_description text,
   p_original integer, p_rescue integer, p_quantity integer, p_pickup_to timestamptz
-) returns json language plpgsql security definer set search_path = public as $$
+) returns json language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_merchant merchants%rowtype;
   v_basket   baskets%rowtype;

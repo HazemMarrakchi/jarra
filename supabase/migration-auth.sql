@@ -15,7 +15,7 @@
 
 -- ── Revendication : lie le commerce au numéro connecté ─────────────
 create or replace function public.claim_merchant(p_merchant_id text, p_pin text)
-returns boolean language plpgsql security definer set search_path = public as $$
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_merchant merchants%rowtype;
 begin
@@ -47,7 +47,7 @@ end $$;
 create or replace function public.publish_basket(
   p_merchant_id text, p_pin text, p_title text, p_description text,
   p_original integer, p_rescue integer, p_quantity integer, p_pickup_to timestamptz
-) returns json language plpgsql security definer set search_path = public as $$
+) returns json language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_merchant merchants%rowtype;
   v_basket   baskets%rowtype;
@@ -84,7 +84,7 @@ end $$;
 
 -- ── Validation d'un retrait : session propriétaire si revendiqué ────
 create or replace function public.collect_order(p_code text)
-returns json language plpgsql security definer set search_path = public as $$
+returns json language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_order  orders%rowtype;
   v_owner  uuid;
