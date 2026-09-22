@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { toDataURL as qrToDataURL } from 'qrcode';
 import { CityStore } from '../core/city.store';
 import { Order, discountPct, formatClock, formatTnd } from '../core/model';
 import { PHOTOS } from '../core/photos';
@@ -45,7 +46,7 @@ import { PHOTOS } from '../core/photos';
               <div class="card card-pad stack gap-xs">
                 <span class="ms ms-24" style="color:var(--brand-mint-ink)">qr_code_2</span>
                 <b class="label-lg">Code de retrait</b>
-                <p class="body-sm muted">Un code court à 4 caractères, à présenter au comptoir pendant le créneau.</p>
+                <p class="body-sm muted">Un QR code (ou code court à 4 caractères) à présenter au comptoir pendant le créneau.</p>
               </div>
               <div class="card card-pad stack gap-xs">
                 <span class="ms ms-24" style="color:var(--brand-mint-ink)">eco</span>
@@ -115,6 +116,9 @@ import { PHOTOS } from '../core/photos';
               @if (order(); as o) {
                 <div class="ticket-code">
                   <span class="label-sm" style="color:#a9c6b8">Code à présenter au comptoir</span>
+                  @if (qrDataUrl(); as qr) {
+                    <img class="qr" [src]="qr" width="176" height="176" alt="QR code de retrait à faire scanner au comptoir" />
+                  }
                   <b class="mono-num">{{ o.pickupCode }}</b>
                   <span class="body-sm" style="color:#d6e7de">{{ merchantName() }} · {{ merchantArea() }}, Gabès</span>
                   <button class="btn btn-invert btn-sm" type="button" (click)="cancelOrder()">Annuler la réservation</button>
@@ -185,6 +189,7 @@ import { PHOTOS } from '../core/photos';
     .rows .total span:first-child { font-weight: 700; }
     .ticket-code { background: var(--primary-container); color: var(--on-primary); padding: var(--space-lg); display: grid; gap: var(--space-sm); justify-items: center; text-align: center; }
     .ticket-code b { font-size: 2.5rem; letter-spacing: .24em; line-height: 1; }
+    .ticket-code img.qr { width: 176px; height: 176px; background: #fff; border-radius: var(--r-md); padding: 10px; }
     .tips { display: grid; gap: 6px; margin-top: var(--space-sm); font-size: 0.8125rem; color: var(--on-surface-variant); }
     .tips li { padding-left: 1rem; position: relative; }
     .tips li::before { content: ''; position: absolute; left: 0; top: .5em; width: 5px; height: 5px; border-radius: 50%; background: var(--brand-mint); }
@@ -196,6 +201,7 @@ export class BasketComponent {
 
   customerName = '';
   readonly order = signal<Order | null>(null);
+  readonly qrDataUrl = signal<string | null>(null);
   readonly qty = signal(1);
   readonly busy = signal(false);
 
@@ -274,7 +280,14 @@ export class BasketComponent {
     this.busy.set(true);
     try {
       const order = await this.store.reserve(b.id, this.customerName.trim());
-      if (order) this.order.set(order);
+      if (order) {
+        this.order.set(order);
+        try {
+          this.qrDataUrl.set(await qrToDataURL(`JARRA:${order.pickupCode}`, { margin: 1, width: 220 }));
+        } catch {
+          /* QR optionnel : le code texte reste affiché */
+        }
+      }
     } finally {
       this.busy.set(false);
     }
@@ -282,6 +295,9 @@ export class BasketComponent {
 
   async cancelOrder(): Promise<void> {
     const o = this.order();
-    if (o && (await this.store.cancel(o.id))) this.order.set(null);
+    if (o && (await this.store.cancel(o.id))) {
+      this.order.set(null);
+      this.qrDataUrl.set(null);
+    }
   }
 }

@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, computed, inject, signal } from '@angular/core';
+
+/** Détecteur de QR natif (Shape Detection API) — absent des types lib.dom de TS 5.5. */
+interface QrDetector {
+  detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]>;
+}
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CityStore } from '../core/city.store';
@@ -274,9 +279,24 @@ import { KIND_ICON } from '../core/ui';
               <span class="ms ms-18">{{ busy() ? 'hourglass_top' : 'check' }}</span>Valider retrait
             </button>
           </div>
-          <button class="btn btn-ghost btn-sm" type="button" (click)="collectMsg.set('Scannez le QR code du client avec la caméra du comptoir.')">
-            <span class="ms ms-18">qr_code_scanner</span>Scanner le QR client
-          </button>
+          @if (scanSupported) {
+            <button class="btn btn-ghost btn-sm" type="button" [disabled]="scanning()" (click)="startScan()">
+              <span class="ms ms-18">qr_code_scanner</span>{{ scanning() ? 'Caméra active…' : 'Scanner le QR client' }}
+            </button>
+            @if (scanning()) {
+              <button class="btn btn-ghost btn-sm" type="button" (click)="stopScan()">
+                <span class="ms ms-18">close</span>Arrêter
+              </button>
+            }
+          } @else {
+            <span class="hint">Scan QR non pris en charge par ce navigateur — saisie manuelle ci-dessus.</span>
+          }
+          <div class="scanner" [class.active]="scanning()">
+            <video #scanVideo muted playsinline></video>
+          </div>
+          @if (scanMsg(); as smsg) {
+            <p class="body-sm muted" role="status">{{ smsg }}</p>
+          }
           @if (collectMsg(); as msg) {
             <p class="body-sm" role="status" [style.color]="collectOk() ? 'var(--brand-mint-ink)' : 'var(--error)'">{{ msg }}</p>
           }
@@ -354,14 +374,27 @@ import { KIND_ICON } from '../core/ui';
     .kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
     .kpi { background: var(--surface-container-low); border-radius: var(--r-md); padding: var(--space-sm) var(--space-md); display: grid; gap: 2px; }
     .kpi .mono-num { font-size: 1.25rem; }
+
+    .scanner { display: none; margin-top: var(--space-sm); border-radius: var(--r-md); overflow: hidden; }
+    .scanner.active { display: block; }
+    .scanner video { display: block; width: 100%; max-height: 220px; object-fit: cover; background: #0f2018; }
   `],
 })
-export class MerchantComponent {
+export class MerchantComponent implements OnDestroy {
   readonly store = inject(CityStore);
 
   readonly selectedId = signal<string>('m01');
   codeInput = '';
   readonly collectMsg = signal<string | null>(null);
+  readonly scanning = signal(false);
+  readonly scanMsg = signal<string | null>(null);
+  /** BarcodeDetector : natif sur Chrome/Edge/Android ; ailleurs, repli sur la saisie manuelle. */
+  readonly scanSupported = typeof window !== 'undefined' && 'BarcodeDetector' in window;
+
+  @ViewChild('scanVideo') private scanVideo?: ElementRef<HTMLVideoElement>;
+  private scanStream: MediaStream | null = null;
+  private scanTimer: ReturnType<typeof setInterval> | null = null;
+  private detecting = false;
   readonly collectOk = signal(false);
   readonly publishMsg = signal<string | null>(null);
 
@@ -494,6 +527,71 @@ export class MerchantComponent {
       this.busy.set(false);
     }
   }
+
+  /** Active la caméra arrière et détecte les QR « JARRA:CODE » jusqu'à validation. */
+  async startScan(): Promise<void> {
+    this.scanMsg.set(null);
+    if (!this.scanSupported || this.scanning()) return;
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch {
+      this.scanMsg.set('Caméra inaccessible — autorisez l’accès, ou saisissez le code à la main.');
+      return;
+    }
+    this.scanStream = stream;
+    this.scanning.set(true);
+    const video = this.scanVideo?.nativeElement;
+    if (!video) {
+      this.stopScan();
+      return;
+    }
+    video.srcObject = stream;
+    try {
+      await video.play();
+    } catch {
+      /* lecture déjà en cours sur certains navigateurs */
+    }
+    const DetectorCtor = (window as unknown as { BarcodeDetector: new (o: { formats: string[] }) => QrDetector }).BarcodeDetector;
+    const detector = new DetectorCtor({ formats: ['qr_code'] });
+    this.scanTimer = setInterval(() => void this.detectFrame(detector, video), 350);
+  }
+
+  private async detectFrame(detector: QrDetector, video: HTMLVideoElement): Promise<void> {
+    if (this.detecting || video.readyState < 2) return;
+    this.detecting = true;
+    try {
+      const codes = await detector.detect(video);
+      const hit = codes.map((c) => c.rawValue).find((v) => v.startsWith('JARRA:'));
+      if (hit) {
+        const code = hit.slice('JARRA:'.length).trim();
+        this.stopScan();
+        this.codeInput = code;
+        void this.collect();
+      }
+    } catch {
+      /* image pas encore exploitable, on réessaie au prochain tick */
+    } finally {
+      this.detecting = false;
+    }
+  }
+
+  stopScan(): void {
+    if (this.scanTimer) {
+      clearInterval(this.scanTimer);
+      this.scanTimer = null;
+    }
+    this.scanStream?.getTracks().forEach((t) => t.stop());
+    this.scanStream = null;
+    const video = this.scanVideo?.nativeElement;
+    if (video) video.srcObject = null;
+    this.scanning.set(false);
+  }
+
+  ngOnDestroy(): void {
+    this.stopScan();
+  }
+
 
   /** Publication express : le panier apparaît immédiatement sur la carte. */
   async publish(): Promise<void> {
